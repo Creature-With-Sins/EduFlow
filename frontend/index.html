@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Dashboard Klien (Pak Hendra) - EduFlow Agency</title>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Supabase client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+
+  <!-- jsPDF -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+
+  <!-- Unified Light CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <!-- ================= AUTH: REGISTER PAGE ================= -->
+  <section id="registerPage" class="auth-page">
+    <!-- Auth Navigation Header (Identik dengan Home Nav) -->
+    <header class="auth-nav-header">
+      <a href="home.html" class="home-brand">
+        <div class="home-brand-logo">EF</div>
+        <div class="home-brand-text">Edu<span>Flow</span> Agency</div>
+      </a>
+      <a href="home.html" class="header-home-btn">
+        <span>🏠</span>
+        <span>Kembali ke Home Screen</span>
+      </a>
+    </header>
+
+    <div class="auth-wrapper">
+      <div class="auth-card">
+        <div class="auth-icon">EF</div>
+        <h1>Registrasi Klien</h1>
+        <p>Buat akun institusi Anda untuk mulai memantau corong admisi</p>
+
+        <form id="registerForm">
+          <label for="registerName">Nama Lengkap</label>
+          <input type="text" id="registerName" placeholder="Contoh: Pak Hendra" required />
+
+          <label for="registerEmail">Email Lembaga / Kampus</label>
+          <input type="email" id="registerEmail" placeholder="hendra@skillsnusantara.ac.id" required />
+
+          <label for="registerPassword">Password</label>
+          <input type="password" id="registerPassword" placeholder="********" required />
+
+          <label for="confirmPassword">Konfirmasi Password</label>
+          <input type="password" id="confirmPassword" placeholder="********" required />
+
+          <button type="submit" class="auth-button">Daftar Akun Baru</button>
+          <button type="button" class="demo-login-btn" onclick="showDashboardPage()">⚡ Mode Demo: Langsung Buka Dashboard Pak Hendra</button>
+        </form>
+
+        <p class="auth-link">
+          Sudah memiliki akun?
+          <button id="goToLogin" type="button">Masuk ke Dashboard</button>
+        </p>
+      </div>
+    </div>
+
+    <div class="auth-footer">&copy; 2026 EduFlow Agency &bull; Akademi Skill Nusantara</div>
+  </section>
+
+  <!-- ================= AUTH: LOGIN PAGE ================= -->
+  <section id="loginPage" class="auth-page hidden">
+    <!-- Auth Navigation Header (Identik dengan Home Nav) -->
+    <header class="auth-nav-header">
+      <a href="home.html" class="home-brand">
+        <div class="home-brand-logo">EF</div>
+        <div class="home-brand-text">Edu<span>Flow</span> Agency</div>
+      </a>
+      <a href="home.html" class="header-home-btn">
+        <span>🏠</span>
+        <span>Kembali ke Home Screen</span>
+      </a>
+    </header>
+
+    <div class="auth-wrapper">
+      <div class="auth-card">
+        <div class="auth-icon">EF</div>
+
+        <h1>Selamat Datang</h1>
+        <p>Masukkan kredensial Anda untuk mengakses dashboard analitik</p>
+
+        <form id="loginForm">
+          <label for="loginEmail">Alamat Email Lembaga</label>
+          <input type="email" id="loginEmail" placeholder="hendra@skillsnusantara.ac.id" required />
+
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="********" required />
+
+          <button type="submit" class="auth-button">Masuk ke Dashboard &rarr;</button>
+          <button type="button" class="demo-login-btn" onclick="showDashboardPage()">⚡ Mode Demo: Masuk Sebagai Pak Hendra</button>
+        </form>
+
+        <p class="auth-link">
+          Belum memiliki akun?
+          <button id="goToRegister" type="button">Buat akun baru</button>
+        </p>
+      </div>
+    </div>
+
+    <div class="auth-footer">&copy; 2026 EduFlow Agency &bull; Akademi Skill Nusantara</div>
+  </section>
+
+  <!-- ================= DASHBOARD PAGE (SISI KLIEN: PAK HENDRA) ================= -->
+  <section id="dashboardPage" class="dashboard-page hidden">
+    <!-- Sidebar Kiri Bersih Minimalis -->
+    <aside class="sidebar">
+      <div class="sidebar-main">
+        <div class="brand">
+          <div class="logo">EF</div>
+          <div>
+            <h2>EduFlow</h2>
+            <p>Akademi Skill Nusantara</p>
+          </div>
+        </div>
+
+        <nav class="menu">
+          <button type="button" class="menu-item active" data-page="overview">📊 Overview</button>
+          <button type="button" class="menu-item" data-page="leak_analytics">🔥 Leak Alert & Ads (DIP)</button>
+          <button type="button" class="menu-item" data-page="channel">🌐 Channel Analysis</button>
+          <button type="button" class="menu-item" data-page="funnel">📈 Funnel Depth</button>
+          <button type="button" class="menu-item" data-page="table">📋 Data Tables & Leads</button>
+        </nav>
+      </div>
+
+      <div class="sidebar-bottom">
+        <button type="button" id="logoutButton">Keluar / Ganti Akun</button>
+      </div>
+    </aside>
+
+    <!-- Konten Utama Dashboard -->
+    <main class="main-content">
+      <header class="dashboard-header">
+        <div class="filter-group">
+          <select id="channelFilter">
+            <option value="all">Semua Saluran Iklan</option>
+            <option value="Google Ads">Google Ads</option>
+            <option value="Instagram">Instagram</option>
+            <option value="Twitter/X">Twitter/X</option>
+            <option value="Website">Website Organik</option>
+          </select>
+
+          <select id="dateFilter">
+            <option value="7">7 Hari Terakhir</option>
+            <option value="month">Bulan Ini</option>
+            <option value="year">Tahun Ini</option>
+          </select>
+        </div>
+
+        <div class="header-actions">
+          <div class="user-persona-tag">
+            <span>👤</span>
+            <span><strong>Pak Hendra</strong> &bull; <em>Head of Marketing</em></span>
+          </div>
+
+          <a href="home.html" class="header-home-btn" title="Halaman Utama EduFlow Agency">
+            <span>🏠</span>
+            <span>Home EduFlow</span>
+          </a>
+
+          <div class="avatar" title="Profil Pak Hendra">
+            <svg class="avatar-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 21a8 8 0 0 0-16 0" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+        </div>
+      </header>
+
+      <section id="app">
+        <!-- Konten dashboard dirender secara dinamis oleh js/main.js -->
+      </section>
+    </main>
+  </section>
+
+  <!-- JavaScript Modules -->
+  <script src="js/data_funnel.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
