@@ -100,21 +100,25 @@ Antarmuka terbagi menjadi dua sisi interaksi:
   * Buka `frontend/home.html` untuk melihat Home Screen EduFlow Agency & Kalkulator Kebocoran.
   * Buka `frontend/index.html` untuk melihat Auth & Dashboard Klien (Pak Hendra).
 * *Tips Demo:* Pada halaman login dashboard (`index.html`), klik tombol **"⚡ Mode Demo: Masuk Sebagai Pak Hendra"** untuk masuk instan dengan 1 klik.
-* *Tips Demo:* Pada halaman login dashboard, tersedia tombol **"⚡ Mode Demo: Masuk Sebagai Pak Hendra"** untuk masuk instan dengan 1 klik.
 
-### 2. Menjalankan Backend API (Opsional)
+### 2. Menjalankan Backend API (Lokal)
 ```bash
-cd backend
 npm install
 npm start
 ```
-Server akan aktif di `http://localhost:3001`.
+Server akan aktif di `http://localhost:3001` (melayani API corong dan file statis).
 
 ### 3. Mengimpor Workflow ke n8n
 * Buka instance n8n (`http://localhost:5678` atau n8n Cloud).
 * Klik menu **Workflows > Import from File**.
 * Pilih file `n8n-workflows/pmb-lead-automation.json`.
 * Aktifkan workflow.
+
+### 4. Deploy ke Vercel (Production)
+Proyek ini sudah dilengkapi konfigurasi serverless [`vercel.json`](vercel.json), folder [`api/`](api/index.js), dan aset statis [`public/`](public/):
+* **Root `/`:** Otomatis menampilkan Home Screen EduFlow Agency & Kalkulator Kebocoran (`home.html`).
+* **Dashboard `/index.html` (atau `/dashboard`):** Menampilkan Dashboard Analitik Pak Hendra.
+* **Backend `/api/*`:** Otomatis dialihkan ke Express Serverless Function (`/api/dashboard/funnel` & `/api/leads`).
 
 ---
 

@@ -1,0 +1,14 @@
+{
+  "name": "leaktrace-eduflow",
+  "version": "1.0.0",
+  "description": "Platform Analitik Corong PMB & EduFlow Agency Suite",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "build": "node -e \"const fs=require('fs'); if(fs.existsSync('frontend')){fs.cpSync('frontend', 'public', {recursive:true});}\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

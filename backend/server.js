@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -8,6 +9,24 @@ const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || "";
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static frontend assets (both public and frontend directories supported)
+const publicPath = path.join(__dirname, "../public");
+const frontendPath = path.join(__dirname, "../frontend");
+app.use(express.static(publicPath));
+app.use(express.static(frontendPath));
+
+// API Health Check & status
+app.get("/api", (req, res) => {
+  res.json({
+    success: true,
+    message: "LeakTrace EduFlow API Engine is active",
+    endpoints: {
+      funnel: "/api/dashboard/funnel",
+      leads: "/api/leads"
+    }
+  });
+});
 
 // In-memory leads storage for demonstration & fast prototyping
 const leadsStore = [
@@ -221,8 +240,31 @@ app.get("/api/leads", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 LeakTrace Backend running on http://localhost:${PORT}`);
-  console.log(`📡 GET  http://localhost:${PORT}/api/dashboard/funnel`);
-  console.log(`📥 POST http://localhost:${PORT}/api/leads`);
+// Root & Static Page Routes (Guarantees no "Cannot GET /" occurs)
+app.get(["/", "/home", "/home.html"], (req, res) => {
+  const homeFile = path.join(publicPath, "home.html");
+  const fallbackHome = path.join(frontendPath, "home.html");
+  res.sendFile(homeFile, (err) => {
+    if (err) res.sendFile(fallbackHome);
+  });
 });
+
+app.get(["/dashboard", "/index", "/index.html"], (req, res) => {
+  const indexFile = path.join(publicPath, "index.html");
+  const fallbackIndex = path.join(frontendPath, "index.html");
+  res.sendFile(indexFile, (err) => {
+    if (err) res.sendFile(fallbackIndex);
+  });
+});
+
+// Run server only if executed directly (not when required as a serverless module)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 LeakTrace Backend running on http://localhost:${PORT}`);
+    console.log(`📡 GET  http://localhost:${PORT}/api/dashboard/funnel`);
+    console.log(`📥 POST http://localhost:${PORT}/api/leads`);
+  });
+}
+
+// Export for Vercel Serverless Function
+module.exports = app;
