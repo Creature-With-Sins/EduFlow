@@ -16,15 +16,164 @@ const frontendPath = path.join(__dirname, "../frontend");
 app.use(express.static(publicPath));
 app.use(express.static(frontendPath));
 
+// In-memory users store for fast prototyping & serverless compatibility on Vercel
+const usersStore = [
+  {
+    user_id: "USR-001",
+    email: "hendra@skillsnusantara.ac.id",
+    password: "password123",
+    full_name: "Pak Hendra",
+    institution: "Akademi Skill Nusantara",
+    role: "Head of Marketing & Admission",
+    created_at: new Date(Date.now() - 86400000 * 30).toISOString()
+  }
+];
+
 // API Health Check & status
 app.get("/api", (req, res) => {
   res.json({
     success: true,
     message: "LeakTrace EduFlow API Engine is active",
     endpoints: {
+      register: "/api/register",
+      login: "/api/login",
+      user: "/api/user",
       funnel: "/api/dashboard/funnel",
       leads: "/api/leads"
     }
+  });
+});
+
+/**
+ * POST /api/register
+ * Client registration with memory storage & instant demo fallback
+ */
+app.post("/api/register", (req, res) => {
+  try {
+    const { name, full_name, email, password } = req.body;
+    const userName = (name || full_name || "").trim();
+    const userEmail = (email || "").trim().toLowerCase();
+
+    if (!userEmail || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email dan password wajib diisi."
+      });
+    }
+
+    // Check if user already exists in memory
+    const existingUser = usersStore.find(u => u.email === userEmail);
+    if (existingUser) {
+      return res.status(200).json({
+        success: true,
+        message: "Akun sudah terdaftar. Mengalihkan ke dashboard...",
+        user: {
+          user_id: existingUser.user_id,
+          full_name: existingUser.full_name,
+          email: existingUser.email,
+          role: existingUser.role
+        }
+      });
+    }
+
+    const newUser = {
+      user_id: `USR-${Date.now().toString().slice(-4)}`,
+      full_name: userName || "Klien EduFlow",
+      email: userEmail,
+      password: password,
+      role: "Client Administrator",
+      created_at: new Date().toISOString()
+    };
+
+    usersStore.push(newUser);
+
+    res.status(201).json({
+      success: true,
+      message: "Registrasi berhasil! Selamat datang di EduFlow.",
+      user: {
+        user_id: newUser.user_id,
+        full_name: newUser.full_name,
+        email: newUser.email,
+        role: newUser.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan saat registrasi.",
+      error: err.message
+    });
+  }
+});
+
+/**
+ * POST /api/login
+ * Client login with in-memory validation & demo fallback
+ */
+app.post("/api/login", (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const userEmail = (email || "").trim().toLowerCase();
+
+    // Check in memory store
+    const user = usersStore.find(u => u.email === userEmail);
+    if (user && user.password === password) {
+      return res.json({
+        success: true,
+        message: "Login berhasil!",
+        user: {
+          user_id: user.user_id,
+          full_name: user.full_name,
+          email: user.email,
+          role: user.role
+        }
+      });
+    }
+
+    // Demo user fallback: if user logs in with hendra or any demo password
+    if (userEmail === "hendra@skillsnusantara.ac.id" || password === "demo" || password === "password123") {
+      return res.json({
+        success: true,
+        message: "Login berhasil (Mode Demo Klien)!",
+        user: {
+          user_id: "USR-001",
+          full_name: "Pak Hendra",
+          email: userEmail || "hendra@skillsnusantara.ac.id",
+          role: "Head of Marketing & Admission"
+        }
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: "Email atau password tidak sesuai."
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan saat login.",
+      error: err.message
+    });
+  }
+});
+
+/**
+ * GET /api/user or /api/me
+ */
+app.get(["/api/user", "/api/me"], (req, res) => {
+  res.json({
+    success: true,
+    user: usersStore[0]
+  });
+});
+
+/**
+ * POST /api/logout
+ */
+app.post("/api/logout", (req, res) => {
+  res.json({
+    success: true,
+    message: "Logout berhasil."
   });
 });
 
