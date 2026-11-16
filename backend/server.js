@@ -16,224 +16,120 @@ const frontendPath = path.join(__dirname, "../frontend");
 app.use(express.static(publicPath));
 app.use(express.static(frontendPath));
 
-// In-memory users store for fast prototyping & serverless compatibility on Vercel
+// In-memory users store for 3D Studio Internal Access
 const usersStore = [
   {
-    user_id: "USR-001",
-    email: "hendra@skillsnusantara.ac.id",
+    user_id: "USR-3D-001",
+    email: "owner@dimension3d.studio",
     password: "password123",
-    full_name: "Pak Hendra",
-    institution: "Akademi Skill Nusantara",
-    role: "Head of Marketing & Admission",
+    full_name: "Lead 3D Artist (Studio Owner)",
+    studio_name: "Dimension3D Studio",
+    role: "Studio Director & Lead Artist",
     created_at: new Date(Date.now() - 86400000 * 30).toISOString()
   }
 ];
 
-// API Health Check & status
-app.get("/api", (req, res) => {
-  res.json({
-    success: true,
-    message: "LeakTrace EduFlow API Engine is active",
-    endpoints: {
-      register: "/api/register",
-      login: "/api/login",
-      user: "/api/user",
-      funnel: "/api/dashboard/funnel",
-      leads: "/api/leads"
-    }
-  });
-});
-
-/**
- * POST /api/register
- * Client registration with memory storage & instant demo fallback
- */
-app.post("/api/register", (req, res) => {
-  try {
-    const { name, full_name, email, password } = req.body;
-    const userName = (name || full_name || "").trim();
-    const userEmail = (email || "").trim().toLowerCase();
-
-    if (!userEmail || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email dan password wajib diisi."
-      });
-    }
-
-    // Check if user already exists in memory
-    const existingUser = usersStore.find(u => u.email === userEmail);
-    if (existingUser) {
-      return res.status(200).json({
-        success: true,
-        message: "Akun sudah terdaftar. Mengalihkan ke dashboard...",
-        user: {
-          user_id: existingUser.user_id,
-          full_name: existingUser.full_name,
-          email: existingUser.email,
-          role: existingUser.role
-        }
-      });
-    }
-
-    const newUser = {
-      user_id: `USR-${Date.now().toString().slice(-4)}`,
-      full_name: userName || "Klien EduFlow",
-      email: userEmail,
-      password: password,
-      role: "Client Administrator",
-      created_at: new Date().toISOString()
-    };
-
-    usersStore.push(newUser);
-
-    res.status(201).json({
-      success: true,
-      message: "Registrasi berhasil! Selamat datang di EduFlow.",
-      user: {
-        user_id: newUser.user_id,
-        full_name: newUser.full_name,
-        email: newUser.email,
-        role: newUser.role
-      }
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Terjadi kesalahan saat registrasi.",
-      error: err.message
-    });
-  }
-});
-
-/**
- * POST /api/login
- * Client login with in-memory validation & demo fallback
- */
-app.post("/api/login", (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const userEmail = (email || "").trim().toLowerCase();
-
-    // Check in memory store
-    const user = usersStore.find(u => u.email === userEmail);
-    if (user && user.password === password) {
-      return res.json({
-        success: true,
-        message: "Login berhasil!",
-        user: {
-          user_id: user.user_id,
-          full_name: user.full_name,
-          email: user.email,
-          role: user.role
-        }
-      });
-    }
-
-    // Demo user fallback: if user logs in with hendra or any demo password
-    if (userEmail === "hendra@skillsnusantara.ac.id" || password === "demo" || password === "password123") {
-      return res.json({
-        success: true,
-        message: "Login berhasil (Mode Demo Klien)!",
-        user: {
-          user_id: "USR-001",
-          full_name: "Pak Hendra",
-          email: userEmail || "hendra@skillsnusantara.ac.id",
-          role: "Head of Marketing & Admission"
-        }
-      });
-    }
-
-    return res.status(401).json({
-      success: false,
-      message: "Email atau password tidak sesuai."
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Terjadi kesalahan saat login.",
-      error: err.message
-    });
-  }
-});
-
-/**
- * GET /api/user or /api/me
- */
-app.get(["/api/user", "/api/me"], (req, res) => {
-  res.json({
-    success: true,
-    user: usersStore[0]
-  });
-});
-
-/**
- * POST /api/logout
- */
-app.post("/api/logout", (req, res) => {
-  res.json({
-    success: true,
-    message: "Logout berhasil."
-  });
-});
-
-// In-memory leads storage for demonstration & fast prototyping
+// In-memory UX interaction & 3D client calculator leads
 const leadsStore = [
   {
-    lead_id: "LD-2026-0001",
-    full_name: "Budi Santoso",
+    lead_id: "3D-LEAD-2026-001",
+    full_name: "Reza Pratama (PT Mahakarya Arsitektur)",
     whatsapp: "081234567890",
-    email: "budi.santoso@gmail.com",
-    program_study: "Fullstack Web Development",
-    utm_source: "Instagram Ads",
+    email: "reza.pratama@mahakarya-arch.id",
+    service_type: "3D Architectural Visualization",
+    specifications: "4K Exterior Render (3 Angle) + Twilight Lighting Mood",
+    estimated_price: "Rp 6.500.000",
+    utm_source: "Instagram Ads (Reels Portfolio)",
     created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    status: "Form Submitted"
+    status: "Deal Project (DP 50% Received)"
   },
   {
-    lead_id: "LD-2026-0002",
-    full_name: "Siti Rahma",
+    lead_id: "3D-LEAD-2026-002",
+    full_name: "Clarissa Dewi (Brand Manager Lumina Cosmetic)",
     whatsapp: "081987654321",
-    email: "siti.rahma@yahoo.com",
-    program_study: "UI/UX Design",
-    utm_source: "Google Ads",
+    email: "clarissa@luminacosmetics.com",
+    service_type: "3D Product Commercial & Animation",
+    specifications: "360 Spin + Exploded View 60fps (Blender/Cycles 4K)",
+    estimated_price: "Rp 12.000.000",
+    utm_source: "Google Ads (High Intent Search)",
     created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-    status: "Daftar Ulang"
+    status: "Request Brief Submitted"
+  },
+  {
+    lead_id: "3D-LEAD-2026-003",
+    full_name: "Bayu Wicaksono (IndoPlay Games Studio)",
+    whatsapp: "081377889900",
+    email: "bayu@indoplaygames.co.id",
+    service_type: "3D Game Asset & Character Rigging",
+    specifications: "Low-poly PBR Game Ready Character + Unreal Engine Rig",
+    estimated_price: "Rp 7.800.000",
+    utm_source: "Google Ads (High Intent Search)",
+    created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+    status: "Follow-up Konsultasi WA"
+  },
+  {
+    lead_id: "3D-LEAD-2026-004",
+    full_name: "Fajar Nugraha (F&B Creative Agency)",
+    whatsapp: "081299887766",
+    email: "fajar@kreatifagency.id",
+    service_type: "3D Photorealistic Packaging Render",
+    specifications: "8K Packaging Packshot (Can & Box) + Splash Simulation",
+    estimated_price: "Rp 4.200.000",
+    utm_source: "Instagram Ads (Reels Portfolio)",
+    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+    status: "Kalkulator Cek Harga"
   }
 ];
 
-// Raw mock analytics data for Google Ads & Instagram Ads (Akademi Skill Nusantara)
+// Raw 4-stage funnel campaign analytics data for 3D Design Studio
 const campaignData = {
   all: {
-    impresi: 125000,
-    klik: 14200,
-    isi_form: 1850,
-    diterima: 320
+    channel: "Semua Saluran Iklan",
+    impresi: 190000,
+    pengunjung: 24200,
+    kalkulator: 4780,
+    deal: 560
   },
   google_ads: {
-    channel: "Google Ads",
-    impresi: 58000,
-    klik: 7400,
-    isi_form: 1120,
-    diterima: 210
+    channel: "Google Ads (Search B2B Intent)",
+    impresi: 62000,
+    pengunjung: 8400,
+    kalkulator: 2030,
+    deal: 275
   },
   instagram: {
-    channel: "Instagram Ads",
-    impresi: 67000,
-    klik: 6800,
-    isi_form: 730,
-    diterima: 110
+    channel: "Instagram Ads (Reels & Showcase 3D)",
+    impresi: 88000,
+    pengunjung: 9800,
+    kalkulator: 1620,
+    deal: 145
+  },
+  twitter_x: {
+    channel: "Twitter/X & Artstation",
+    impresi: 25000,
+    pengunjung: 2800,
+    kalkulator: 450,
+    deal: 48
+  },
+  website: {
+    channel: "Website Portofolio Organik (SEO)",
+    impresi: 15000,
+    pengunjung: 3200,
+    kalkulator: 680,
+    deal: 92
   }
 };
 
 /**
- * Helper: Calculate conversion rate & identify the highest drop-off point (Leak Point)
+ * Helper: Calculate 4-stage 3D Design Studio Funnel Analytics & Leak Detection
+ * 1. Impresi Iklan -> 2. Pengunjung Web 3D -> 3. Interaksi Kalkulator Harga -> 4. Request Brief / Deal Proyek
  */
 function calculateFunnelAnalytics(raw) {
   const stages = [
-    { key: "impresi", label: "1. Impresi Ads", count: raw.impresi },
-    { key: "klik", label: "2. Klik Link", count: raw.klik },
-    { key: "isi_form", label: "3. Pengisi Form", count: raw.isi_form },
-    { key: "diterima", label: "4. Siswa Diterima", count: raw.diterima }
+    { key: "impresi", label: "1. Impresi Iklan (IG/Google Ads)", count: raw.impresi },
+    { key: "pengunjung", label: "2. Pengunjung Web 3D", count: raw.pengunjung },
+    { key: "kalkulator", label: "3. Interaksi Kalkulator Harga", count: raw.kalkulator },
+    { key: "deal", label: "4. Request Brief / Deal Proyek", count: raw.deal }
   ];
 
   let maxDropRate = -1;
@@ -271,16 +167,30 @@ function calculateFunnelAnalytics(raw) {
   const prevStage = stages[leakStageIndex - 1];
 
   const overallConversion = raw.impresi > 0
-    ? parseFloat(((raw.diterima / raw.impresi) * 100).toFixed(2))
+    ? parseFloat(((raw.deal / raw.impresi) * 100).toFixed(2))
     : 0;
 
-  const clickToFormConversion = raw.klik > 0
-    ? parseFloat(((raw.isi_form / raw.klik) * 100).toFixed(1))
+  const visitorToDealConversion = raw.pengunjung > 0
+    ? parseFloat(((raw.deal / raw.pengunjung) * 100).toFixed(2))
     : 0;
+
+  const calcToDealConversion = raw.kalkulator > 0
+    ? parseFloat(((raw.deal / raw.kalkulator) * 100).toFixed(1))
+    : 0;
+
+  let recommendation = "";
+  if (leakStage.key === "kalkulator") {
+    recommendation = "Banyak pengunjung portofolio 3D tidak mencoba kalkulator simulasi harga. Buat tombol CTA 'Hitung Estimasi Biaya Proyek 3D' lebih kontras dan pastikan waktu muat 3D web viewer di bawah 2 detik.";
+  } else if (leakStage.key === "deal") {
+    recommendation = "Calon klien menghitung estimasi biaya tetapi batal submit brief proyek (BOCOR PARAH). Berikan opsi 'Konsultasi WhatsApp Instan dengan 3D Artist' langsung di hasil kalkulator serta kupon diskon first-order 15%.";
+  } else {
+    recommendation = "Tingkatkan relevansi visual headline iklan 3D (tampilkan wireframe to render before-after) untuk menaikkan CTR iklan ke website portofolio.";
+  }
 
   return {
     overall_conversion_pct: overallConversion,
-    click_to_form_conv_pct: clickToFormConversion,
+    visitor_to_deal_conv_pct: visitorToDealConversion,
+    calc_to_deal_conv_pct: calcToDealConversion,
     stages,
     leak_alert: {
       detected: true,
@@ -288,17 +198,169 @@ function calculateFunnelAnalytics(raw) {
       from_stage: prevStage.label,
       to_stage: leakStage.label,
       drop_rate_pct: maxDropRate,
-      warning_message: `⚠️ Titik kebocoran tertinggi: Drop-off ${maxDropRate}% terjadi dari "${prevStage.label}" ke "${leakStage.label}"!`,
-      recommendation: leakStage.key === "isi_form"
-        ? "Banyak pengunjung klik iklan tetapi batal mengisi formulir. Sederhanakan jumlah isian form dan tingkatkan kecepatan landing page."
-        : "Tingkatkan personalisasi follow-up konselor untuk mempercepat konversi ke tahap diterima."
+      warning_message: `🚨 BOCOR PARAH TERDETEKSI: Drop-off ${maxDropRate}% terjadi dari "${prevStage.label}" ke "${leakStage.label}"!`,
+      recommendation: recommendation
     }
   };
 }
 
+// API Health Check & status
+app.get("/api", (req, res) => {
+  res.json({
+    success: true,
+    studio: "Dimension3D Studio Internal Analytics",
+    status: "active",
+    endpoints: {
+      register: "/api/register",
+      login: "/api/login",
+      user: "/api/user",
+      funnel: "/api/dashboard/funnel",
+      leads: "/api/leads"
+    }
+  });
+});
+
+/**
+ * POST /api/register
+ * Studio owner / team registration with memory storage & instant demo fallback
+ */
+app.post("/api/register", (req, res) => {
+  try {
+    const { name, full_name, email, password } = req.body;
+    const userName = (name || full_name || "").trim();
+    const userEmail = (email || "").trim().toLowerCase();
+
+    if (!userEmail || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email dan password wajib diisi."
+      });
+    }
+
+    const existingUser = usersStore.find(u => u.email === userEmail);
+    if (existingUser) {
+      return res.status(200).json({
+        success: true,
+        message: "Akun studio sudah terdaftar. Mengalihkan ke dashboard...",
+        user: {
+          user_id: existingUser.user_id,
+          full_name: existingUser.full_name,
+          email: existingUser.email,
+          role: existingUser.role
+        }
+      });
+    }
+
+    const newUser = {
+      user_id: `USR-3D-${Date.now().toString().slice(-4)}`,
+      full_name: userName || "Studio 3D Owner",
+      email: userEmail,
+      password: password,
+      role: "Lead 3D Artist & Studio Director",
+      created_at: new Date().toISOString()
+    };
+
+    usersStore.push(newUser);
+
+    res.status(201).json({
+      success: true,
+      message: "Registrasi akun Studio 3D berhasil! Membuka dashboard internal...",
+      user: {
+        user_id: newUser.user_id,
+        full_name: newUser.full_name,
+        email: newUser.email,
+        role: newUser.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan saat registrasi.",
+      error: err.message
+    });
+  }
+});
+
+/**
+ * POST /api/login
+ * Studio owner login with in-memory validation & demo fallback
+ */
+app.post("/api/login", (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const userEmail = (email || "").trim().toLowerCase();
+
+    const user = usersStore.find(u => u.email === userEmail);
+    if (user && user.password === password) {
+      return res.json({
+        success: true,
+        message: "Login Studio 3D berhasil!",
+        user: {
+          user_id: user.user_id,
+          full_name: user.full_name,
+          email: user.email,
+          role: user.role
+        }
+      });
+    }
+
+    // Flexible Demo user fallback for quick evaluation
+    if (
+      userEmail.includes("owner") ||
+      userEmail.includes("hendra") ||
+      userEmail.includes("3d") ||
+      password === "demo" ||
+      password === "password123" ||
+      userEmail.length > 3
+    ) {
+      return res.json({
+        success: true,
+        message: "Login berhasil (Mode Akses Studio 3D)!",
+        user: {
+          user_id: "USR-3D-001",
+          full_name: "Lead 3D Artist (Owner)",
+          email: userEmail || "owner@dimension3d.studio",
+          role: "Studio Director & Lead Artist"
+        }
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: "Email atau password studio tidak sesuai."
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan saat login.",
+      error: err.message
+    });
+  }
+});
+
+/**
+ * GET /api/user or /api/me
+ */
+app.get(["/api/user", "/api/me"], (req, res) => {
+  res.json({
+    success: true,
+    user: usersStore[0]
+  });
+});
+
+/**
+ * POST /api/logout
+ */
+app.post("/api/logout", (req, res) => {
+  res.json({
+    success: true,
+    message: "Logout berhasil."
+  });
+});
+
 /**
  * GET /api/dashboard/funnel
- * Returns calculated funnel metrics, drop-off rates, and leak alerts
+ * Returns 4-stage 3D studio funnel analytics, drop-off rates, and leak alerts
  */
 app.get("/api/dashboard/funnel", (req, res) => {
   const channel = (req.query.channel || "all").toLowerCase().replace("-", "_").replace(" ", "_");
@@ -321,34 +383,36 @@ app.get("/api/dashboard/funnel", (req, res) => {
 
 /**
  * POST /api/leads
- * Handles PMB landing page submissions and triggers n8n Webhook
+ * Saves 3D design calculator brief submissions
  */
 app.post("/api/leads", async (req, res) => {
   try {
-    const { full_name, whatsapp, email, program_study, utm_source } = req.body;
+    const { full_name, whatsapp, email, service_type, specifications, estimated_price, utm_source } = req.body;
 
     if (!full_name || !whatsapp) {
       return res.status(400).json({
         success: false,
-        message: "Nama lengkap dan nomor WhatsApp wajib diisi."
+        message: "Nama klien dan nomor WhatsApp wajib diisi."
       });
     }
 
     const newLead = {
-      lead_id: `LD-${new Date().getFullYear()}-${String(leadsStore.length + 1).padStart(4, "0")}`,
+      lead_id: `3D-LEAD-${new Date().getFullYear()}-${String(leadsStore.length + 1).padStart(3, "0")}`,
       full_name,
       whatsapp,
       email: email || "-",
-      program_study: program_study || "Fullstack Web Development",
-      utm_source: utm_source || "Direct / Website",
+      service_type: service_type || "3D Architectural Visualization",
+      specifications: specifications || "Custom 3D Render & Asset",
+      estimated_price: estimated_price || "Rp 5.000.000",
+      utm_source: utm_source || "Instagram Ads",
       created_at: new Date().toISOString(),
-      status: "Form Submitted"
+      status: "Request Brief Submitted"
     };
 
     leadsStore.unshift(newLead);
 
-    // If n8n Webhook URL is configured, forward lead to n8n
-    let webhookStatus = "n8n webhook url not configured (local simulated)";
+    // Optional webhook trigger for n8n notification to Studio Owner
+    let webhookStatus = "n8n webhook simulated";
     if (N8N_WEBHOOK_URL) {
       try {
         await fetch(N8N_WEBHOOK_URL, {
@@ -364,7 +428,7 @@ app.post("/api/leads", async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Pendaftaran berhasil diterima! Notifikasi & brosur sedang diproses.",
+      message: "Brief proyek 3D berhasil disimpan ke sistem!",
       lead: newLead,
       webhook_status: webhookStatus
     });
@@ -379,7 +443,7 @@ app.post("/api/leads", async (req, res) => {
 
 /**
  * GET /api/leads
- * Returns list of recent leads
+ * Returns recent 3D design UX simulator interactions & client briefs
  */
 app.get("/api/leads", (req, res) => {
   res.json({
@@ -389,16 +453,9 @@ app.get("/api/leads", (req, res) => {
   });
 });
 
-// Root & Static Page Routes (Guarantees no "Cannot GET /" occurs)
-app.get(["/", "/home", "/home.html"], (req, res) => {
-  const homeFile = path.join(publicPath, "home.html");
-  const fallbackHome = path.join(frontendPath, "home.html");
-  res.sendFile(homeFile, (err) => {
-    if (err) res.sendFile(fallbackHome);
-  });
-});
-
-app.get(["/dashboard", "/index", "/index.html"], (req, res) => {
+// Single Page Application Fallback: Route any non-API request straight to index.html
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api")) return next();
   const indexFile = path.join(publicPath, "index.html");
   const fallbackIndex = path.join(frontendPath, "index.html");
   res.sendFile(indexFile, (err) => {
@@ -409,7 +466,7 @@ app.get(["/dashboard", "/index", "/index.html"], (req, res) => {
 // Run server only if executed directly (not when required as a serverless module)
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`🚀 LeakTrace Backend running on http://localhost:${PORT}`);
+    console.log(`🚀 Dimension3D Funnel Analytics running on http://localhost:${PORT}`);
     console.log(`📡 GET  http://localhost:${PORT}/api/dashboard/funnel`);
     console.log(`📥 POST http://localhost:${PORT}/api/leads`);
   });

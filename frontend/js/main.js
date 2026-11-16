@@ -1,23 +1,19 @@
+/**
+ * Dimension3D Studio - Internal Funnel Analytics & Deal Tracker
+ * 4-Stage Funnel: Impresi Iklan -> Pengunjung Web 3D -> Interaksi Kalkulator Harga -> Request Brief / Deal Proyek
+ */
+
 let appData = null;
 let monthlyChart = null;
 
 let currentPage = "overview";
 let currentChannel = "all";
 let currentDateRange = "7";
-let supabaseClient = null;
-let supabaseDataClient = null;
-let activeDataSource = "none";
-let dailyAggregationCache = null;
 
-const SUPABASE_URL = "https://tyjgxjawjqwerwemzkhy.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5amd4amF3anF3ZXJ3ZW16a2h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNDM1NDIsImV4cCI6MjA5NDkxOTU0Mn0.yDYRxuK0Mw-Ny-etoULGEXczXlKpdP5M2YVsouDi5y0";
-
-const CHANNEL_TRAFFIC_KEYS = {
-  "Google Ads": "google_ads",
-  Instagram: "instagram",
-  "Twitter/X": "twitter_x",
-  Website: "website"
-};
+/* ================= STORAGE KEYS ================= */
+const AUTH_STORAGE_KEY = "dimension3d_session_user";
+const LOCAL_USERS_KEY = "dimension3d_registered_users";
+const LEADS_STORAGE_KEY = "dimension3d_client_leads";
 
 /* ================= ELEMENTS ================= */
 const registerPage = document.getElementById("registerPage");
@@ -35,99 +31,7 @@ const logoutButton = document.getElementById("logoutButton");
 const channelFilter = document.getElementById("channelFilter");
 const dateFilter = document.getElementById("dateFilter");
 
-/* ================= PAGE SWITCHING ================= */
-function showRegisterPage() {
-  registerPage.classList.remove("hidden");
-  loginPage.classList.add("hidden");
-  dashboardPage.classList.add("hidden");
-}
-
-function showLoginPage() {
-  registerPage.classList.add("hidden");
-  loginPage.classList.remove("hidden");
-  dashboardPage.classList.add("hidden");
-}
-
-function showDashboardPage() {
-  registerPage.classList.add("hidden");
-  loginPage.classList.add("hidden");
-  dashboardPage.classList.remove("hidden");
-
-  const storedUser = getStoredSessionUser();
-  if (storedUser && storedUser.full_name) {
-    const personaEl = document.querySelector(".persona-badge span strong");
-    if (personaEl) personaEl.textContent = storedUser.full_name;
-  }
-
-  fetchEduFunnelData();
-}
-
-function createSupabaseClient() {
-  if (!window.supabase || !window.supabase.createClient) {
-    throw new Error("Supabase client belum dimuat.");
-  }
-
-  if (!supabaseClient) {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        fetch: function (url, options = {}) {
-          return fetch(url, {
-            ...options,
-            cache: "no-store"
-          });
-        }
-      }
-    });
-  }
-
-  return supabaseClient;
-}
-
-function createSupabaseDataClient() {
-  if (!window.supabase || !window.supabase.createClient) {
-    throw new Error("Supabase client belum dimuat.");
-  }
-
-  if (!supabaseDataClient) {
-    supabaseDataClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-        storageKey: "edufunnel-anon-data-client"
-      },
-      global: {
-        fetch: function (url, options = {}) {
-          return fetch(url, {
-            ...options,
-            cache: "no-store"
-          });
-        }
-      }
-    });
-  }
-
-  return supabaseDataClient;
-}
-
-function setButtonLoading(button, isLoading, loadingText) {
-  if (!button) return;
-
-  if (isLoading) {
-    button.dataset.defaultText = button.textContent;
-    button.textContent = loadingText;
-    button.disabled = true;
-    return;
-  }
-
-  button.textContent = button.dataset.defaultText || button.textContent;
-  button.disabled = false;
-}
-
-/* ================= LOCAL AUTH STORAGE HELPERS ================= */
-const AUTH_STORAGE_KEY = "eduflow_session_user";
-const LOCAL_USERS_KEY = "eduflow_registered_clients";
-
+/* ================= LOCAL STORAGE HELPERS ================= */
 function getStoredSessionUser() {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -175,1379 +79,331 @@ function findLocalUser(email, password) {
   }
 }
 
-async function getCurrentSupabaseUser() {
+function getStoredLeads() {
   try {
-    const client = createSupabaseClient();
-    const { data, error } = await client.auth.getUser();
-    if (error) return null;
-    return data.user || null;
-  } catch (e) {
-    return null;
-  }
+    const raw = localStorage.getItem(LEADS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  // Default 3D Studio Mock Leads
+  return (window.eduFunnelData && window.eduFunnelData.recent_ux_logs) || [];
 }
 
-/* ================= AUTH ================= */
-goToLogin.addEventListener("click", showLoginPage);
-goToRegister.addEventListener("click", showRegisterPage);
+function saveStoredLead(lead) {
+  try {
+    const current = getStoredLeads();
+    current.unshift(lead);
+    localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(current));
+  } catch (e) {}
+}
 
-registerForm.addEventListener("submit", async function (event) {
-  event.preventDefault();
+/* ================= PAGE SWITCHING ================= */
+function showRegisterPage() {
+  if (registerPage) registerPage.classList.remove("hidden");
+  if (loginPage) loginPage.classList.add("hidden");
+  if (dashboardPage) dashboardPage.classList.add("hidden");
+}
 
-  const name = document.getElementById("registerName").value.trim();
-  const email = document.getElementById("registerEmail").value.trim();
-  const password = document.getElementById("registerPassword").value;
-  const confirmPassword = document.getElementById("confirmPassword").value;
-  const submitButton = registerForm.querySelector("button[type='submit']");
+function showLoginPage() {
+  if (registerPage) registerPage.classList.add("hidden");
+  if (loginPage) loginPage.classList.remove("hidden");
+  if (dashboardPage) dashboardPage.classList.add("hidden");
+}
 
-  if (password !== confirmPassword) {
-    alert("Password dan Konfirmasi Password tidak sama.");
+function showDashboardPage() {
+  if (registerPage) registerPage.classList.add("hidden");
+  if (loginPage) loginPage.classList.add("hidden");
+  if (dashboardPage) dashboardPage.classList.remove("hidden");
+
+  const storedUser = getStoredSessionUser();
+  const displayEl = document.getElementById("displayUserName");
+  if (displayEl && storedUser && storedUser.full_name) {
+    displayEl.textContent = storedUser.full_name;
+  }
+
+  fetchEduFunnelData();
+}
+
+function setButtonLoading(button, isLoading, loadingText) {
+  if (!button) return;
+  if (isLoading) {
+    button.dataset.defaultText = button.textContent;
+    button.textContent = loadingText;
+    button.disabled = true;
     return;
   }
+  button.textContent = button.dataset.defaultText || button.textContent;
+  button.disabled = false;
+}
 
-  setButtonLoading(submitButton, true, "Mendaftarkan Akun...");
+/* ================= AUTH EVENT LISTENERS ================= */
+if (goToLogin) goToLogin.addEventListener("click", showLoginPage);
+if (goToRegister) goToRegister.addEventListener("click", showRegisterPage);
 
-  let registeredUser = null;
+if (registerForm) {
+  registerForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
 
-  // 1. Coba hubungi API backend /api/register
-  try {
-    const response = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password })
-    });
+    const name = document.getElementById("registerName").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const submitButton = registerForm.querySelector("button[type='submit']");
 
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.user) {
-        registeredUser = result.user;
+    if (password !== confirmPassword) {
+      alert("Password dan Konfirmasi Password tidak sama.");
+      return;
+    }
+
+    setButtonLoading(submitButton, true, "Mendaftarkan Akun Studio...");
+
+    let registeredUser = null;
+
+    // 1. Coba hubungi backend jika ada
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.user) {
+          registeredUser = result.user;
+        }
+      }
+    } catch (e) {
+      // Offline / serverless fallback
+    }
+
+    // 2. Fallback instan ke localStorage (100% Anti-Gagal Vercel)
+    if (!registeredUser) {
+      registeredUser = {
+        user_id: `USR-3D-${Date.now().toString().slice(-4)}`,
+        full_name: name || "Lead 3D Artist",
+        email: email,
+        role: "Studio Director & Lead Artist",
+        created_at: new Date().toISOString()
+      };
+    }
+
+    saveLocalUser({ ...registeredUser, password });
+    setStoredSessionUser(registeredUser);
+
+    setButtonLoading(submitButton, false);
+    registerForm.reset();
+
+    showDashboardPage();
+  });
+}
+
+if (loginForm) {
+  loginForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const submitButton = loginForm.querySelector("button[type='submit']");
+
+    setButtonLoading(submitButton, true, "Memproses Akses...");
+
+    let authenticatedUser = null;
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.user) {
+          authenticatedUser = result.user;
+        }
+      }
+    } catch (e) {}
+
+    // Fallback localStorage
+    if (!authenticatedUser) {
+      const local = findLocalUser(email, password);
+      if (local) {
+        authenticatedUser = local;
       }
     }
-  } catch (netErr) {
-    console.warn("Backend /api/register belum tersedia atau offline. Menggunakan fallback localStorage:", netErr);
-  }
 
-  // 2. Fallback instan ke localStorage browser (Menjamin pendaftaran demo tidak pernah gagal)
-  if (!registeredUser) {
-    registeredUser = {
-      user_id: `USR-${Date.now().toString().slice(-4)}`,
-      full_name: name || "Pak Hendra (Demo Klien)",
-      email: email,
-      role: "Head of Marketing & Admission",
-      created_at: new Date().toISOString()
+    // Fallback mode demo / studio owner
+    if (!authenticatedUser) {
+      if (
+        email.toLowerCase().includes("owner") ||
+        email.toLowerCase().includes("3d") ||
+        email.toLowerCase().includes("hendra") ||
+        password === "password123" ||
+        password === "demo" ||
+        email.length > 3
+      ) {
+        authenticatedUser = {
+          user_id: "USR-3D-001",
+          full_name: "Lead 3D Artist (Owner)",
+          email: email || "owner@dimension3d.studio",
+          role: "Studio Director & Lead Artist"
+        };
+      }
+    }
+
+    setButtonLoading(submitButton, false);
+
+    if (authenticatedUser) {
+      setStoredSessionUser(authenticatedUser);
+      loginForm.reset();
+      showDashboardPage();
+    } else {
+      alert("Email atau password studio tidak sesuai. Gunakan tombol 'Mode Demo' untuk masuk instan.");
+    }
+  });
+}
+
+if (logoutButton) {
+  logoutButton.addEventListener("click", async function () {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+    } catch (e) {}
+    clearStoredSessionUser();
+    showLoginPage();
+  });
+}
+
+/* ================= DATA INITIALIZATION ================= */
+function fetchEduFunnelData() {
+  if (window.eduFunnelData) {
+    appData = JSON.parse(JSON.stringify(window.eduFunnelData));
+  } else {
+    appData = {
+      summary: {
+        total_impresi: 190000,
+        total_pengunjung: 24200,
+        total_kalkulator: 4780,
+        total_deal: 560
+      },
+      sources: [
+        { name: "Google Ads", impresi: 62000, pengunjung: 8400, kalkulator: 2030, deal: 275, conversion_rate: 3.27, status: "Stable", badge_class: "stable" },
+        { name: "Instagram", impresi: 88000, pengunjung: 9800, kalkulator: 1620, deal: 145, conversion_rate: 1.48, status: "Alert (Drop-off Tinggi)", badge_class: "risk" },
+        { name: "Twitter/X", impresi: 25000, pengunjung: 2800, kalkulator: 450, deal: 48, conversion_rate: 1.71, status: "Stable", badge_class: "stable" },
+        { name: "Website", impresi: 15000, pengunjung: 3200, kalkulator: 680, deal: 92, conversion_rate: 2.88, status: "Stable", badge_class: "stable" }
+      ]
     };
   }
 
-  saveLocalUser({ ...registeredUser, password });
-  setStoredSessionUser(registeredUser);
-
-  setButtonLoading(submitButton, false);
-  registerForm.reset();
-
-  // Langsung navigasi ke dashboard tanpa modal error
-  showDashboardPage();
-});
-
-loginForm.addEventListener("submit", async function (event) {
-  event.preventDefault();
-
-  const email = document.getElementById("loginEmail").value.trim();
-  const password = document.getElementById("loginPassword").value;
-  const submitButton = loginForm.querySelector("button[type='submit']");
-
-  setButtonLoading(submitButton, true, "Memproses Login...");
-
-  let authenticatedUser = null;
-
-  // 1. Coba verifikasi ke API backend /api/login
-  try {
-    const response = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.user) {
-        authenticatedUser = result.user;
-      }
-    }
-  } catch (netErr) {
-    console.warn("Backend /api/login belum tersedia. Menggunakan fallback penyimpanan lokal:", netErr);
-  }
-
-  // 2. Cek apakah ada di riwayat registrasi browser
-  if (!authenticatedUser) {
-    const local = findLocalUser(email, password);
-    if (local) {
-      authenticatedUser = local;
-    }
-  }
-
-  // 3. Fallback fleksibel untuk presentasi/demo dosen
-  if (!authenticatedUser) {
-    if (
-      email.toLowerCase().includes("hendra") ||
-      password === "password123" ||
-      password === "demo" ||
-      email.length > 3
-    ) {
-      authenticatedUser = {
-        user_id: "USR-001",
-        full_name: "Pak Hendra",
-        email: email || "hendra@skillsnusantara.ac.id",
-        role: "Head of Marketing & Admission"
-      };
-    }
-  }
-
-  setButtonLoading(submitButton, false);
-
-  if (authenticatedUser) {
-    setStoredSessionUser(authenticatedUser);
-    loginForm.reset();
-    showDashboardPage();
-  } else {
-    alert("Email atau password tidak sesuai. Anda dapat menggunakan tombol 'Mode Demo' untuk masuk instan.");
-  }
-});
-
-logoutButton.addEventListener("click", async function () {
-  try {
-    await fetch("/api/logout", { method: "POST" });
-  } catch (e) {}
-  clearStoredSessionUser();
-  showLoginPage();
-});
-
-/* ================= FETCH DATA ================= */
-function getLocalEduFunnelData() {
-  if (!window.eduFunnelData) return null;
-
-  return JSON.parse(JSON.stringify(window.eduFunnelData));
+  setupNavigation();
+  setupFilters();
+  renderPage("overview");
 }
 
-function validateEduFunnelData(data) {
-  return data && Array.isArray(data.sources);
-}
-
-function mapSupabaseData(summaryRow, sourcesRows, trafficRows, dailyRows) {
-  const safeSummaryRow = summaryRow && typeof summaryRow === "object"
-    ? summaryRow
-    : {};
-  let safeSourcesRows = Array.isArray(sourcesRows) ? sourcesRows : [];
-  const safeTrafficRows = Array.isArray(trafficRows) ? trafficRows : [];
-  const safeDailyRows = Array.isArray(dailyRows) ? dailyRows : [];
-
-  if (!summaryRow) {
-    console.warn("Supabase: summary_metrics kosong. Menggunakan nilai summary default 0.");
-  }
-
-  if (safeSourcesRows.length === 0) {
-    console.warn(
-      "Supabase: funnel_sources kosong. Menggunakan kerangka channel agar data harian tetap dapat dirender."
-    );
-
-    safeSourcesRows = Object.keys(CHANNEL_TRAFFIC_KEYS).map(function (channelName, index) {
-      return {
-        name: channelName,
-        pengunjung: 0,
-        daftar: 0,
-        test: 0,
-        daftar_ulang: 0,
-        berkuliah: 0,
-        conversion_rate: 0,
-        drop_off: 100,
-        progression_rates: {},
-        attrition_rates: {},
-        ranking: index + 1,
-        status: "No Data"
-      };
-    });
-  }
-
-  if (safeTrafficRows.length === 0) {
-    console.warn("Supabase: monthly_channel_traffic kosong.");
-  }
-
-  if (safeDailyRows.length === 0) {
-    console.warn("Supabase: daily_channel_traffic kosong.");
-  }
-
-  const requiredDailyFields = [
-    "date",
-    "channel",
-    "pengunjung",
-    "daftar",
-    "test",
-    "daftar_ulang",
-    "berkuliah"
-  ];
-
-  safeDailyRows.forEach(function (row, index) {
-    const missingFields = requiredDailyFields.filter(function (field) {
-      return !Object.prototype.hasOwnProperty.call(row, field);
-    });
-
-    if (missingFields.length > 0) {
-      console.warn(
-        `Supabase: daily_channel_traffic baris ${index + 1} tidak memiliki kolom: ${missingFields.join(", ")}. Nilai yang hilang memakai default.`
-      );
-    }
-  });
-
-  const summary = {
-    total_pengunjung: Number(safeSummaryRow.total_pengunjung || 0),
-    total_daftar: Number(safeSummaryRow.total_daftar || 0),
-    total_test: Number(safeSummaryRow.total_test || 0),
-    total_daftar_ulang: Number(safeSummaryRow.total_daftar_ulang || 0),
-    total_berkuliah: Number(safeSummaryRow.total_berkuliah || 0)
-  };
-
-  const conversionRate = Number(formatConversionRate(
-    calculateConversionRate(summary.total_pengunjung, summary.total_berkuliah)
-  ));
-
-  return {
-    metadata: {
-      project_name: safeSummaryRow.project_name || "EduFunnel",
-      period: safeSummaryRow.period || "2025",
-      generated_by: safeSummaryRow.generated_by || "Supabase"
-    },
-    summary: summary,
-    metric_cards: [
-      {
-        title: "Total Pengunjung",
-        value: summary.total_pengunjung
-      },
-      {
-        title: "Total Berkuliah",
-        value: summary.total_berkuliah
-      },
-      {
-        title: "Conversion Rate",
-        value: conversionRate
-      }
-    ],
-    funnel_stages: safeSummaryRow.funnel_stages || [
-      "Pengunjung",
-      "Daftar",
-      "Test",
-      "Daftar Ulang",
-      "Berkuliah"
-    ],
-    funnel_data: safeSummaryRow.funnel_data || [
-      summary.total_pengunjung,
-      summary.total_daftar,
-      summary.total_test,
-      summary.total_daftar_ulang,
-      summary.total_berkuliah
-    ],
-    sources: safeSourcesRows.map(function (source, index) {
-      const visitors = Number(source.pengunjung || 0);
-      const enrolled = Number(source.berkuliah || 0);
-      const sourceConversionRate = calculateConversionRate(visitors, enrolled);
-
-      return {
-        name: source.name || `Channel ${index + 1}`,
-        pengunjung: visitors,
-        daftar: Number(source.daftar || 0),
-        test: Number(source.test || 0),
-        daftar_ulang: Number(source.daftar_ulang || 0),
-        berkuliah: enrolled,
-        conversion_rate: Number(formatConversionRate(sourceConversionRate)),
-        drop_off: visitors > 0
-          ? Number(formatConversionRate(100 - sourceConversionRate))
-          : 0,
-        progression_rates: source.progression_rates || {},
-        attrition_rates: source.attrition_rates || {},
-        ranking: Number(source.ranking || index + 1),
-        status: source.status || "No Data"
-      };
-    }),
-    monthly_channel_traffic: safeTrafficRows.map(function (item) {
-      return {
-        ...item,
-        month_order: Number(item.month_order || 0),
-        month: item.month || "",
-        google_ads: Number(item.google_ads || 0),
-        instagram: Number(item.instagram || 0),
-        twitter_x: Number(item.twitter_x || 0),
-        website: Number(item.website || 0),
-        daftar: Number(item.daftar || 0),
-        test: Number(item.test || 0),
-        daftar_ulang: Number(item.daftar_ulang || 0),
-        berkuliah: Number(item.berkuliah || 0)
-      };
-    }),
-    daily_channel_traffic: safeDailyRows.map(function (item) {
-      return {
-        date: item.date || "",
-        channel: item.channel || "Unknown",
-        pengunjung: Number(item.pengunjung || 0),
-        daftar: Number(item.daftar || 0),
-        test: Number(item.test || 0),
-        daftar_ulang: Number(item.daftar_ulang || 0),
-        berkuliah: Number(item.berkuliah || 0)
-      };
-    })
-  };
-}
-
-async function fetchSupabaseData() {
-  const client = createSupabaseDataClient();
-
-  async function fetchSummaryMetrics() {
-    let result = await client
-      .from("summary_metrics")
-      .select("*")
-      .eq("period", "2025")
-      .maybeSingle();
-
-    if (result.error) {
-      console.warn(
-        "Supabase: summary_metrics dengan filter period gagal. Mencoba ulang tanpa filter.",
-        result.error
-      );
-
-      result = await client
-        .from("summary_metrics")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
-    }
-
-    return result;
-  }
-
-  async function fetchFunnelSources() {
-    let result = await client
-      .from("funnel_sources")
-      .select("*")
-      .eq("period", "2025")
-      .order("id", { ascending: true });
-
-    if (result.error) {
-      console.warn(
-        "Supabase: funnel_sources dengan filter period gagal. Mencoba ulang tanpa filter.",
-        result.error
-      );
-
-      result = await client
-        .from("funnel_sources")
-        .select("*");
-    }
-
-    if (Array.isArray(result.data)) {
-      result.data.sort(function (sourceA, sourceB) {
-        return Number(sourceA.id || 0) - Number(sourceB.id || 0);
-      });
-    }
-
-    return result;
-  }
-
-  async function fetchMonthlyTraffic() {
-    let result = await client
-      .from("monthly_channel_traffic")
-      .select("*")
-      .eq("period", "2025")
-      .order("month_order", { ascending: true });
-
-    if (result.error) {
-      console.warn(
-        "Supabase: monthly_channel_traffic dengan filter period gagal. Mencoba ulang tanpa filter.",
-        result.error
-      );
-
-      result = await client
-        .from("monthly_channel_traffic")
-        .select("*");
-    }
-
-    if (Array.isArray(result.data)) {
-      result.data.sort(function (monthA, monthB) {
-        return Number(monthA.month_order || 0) - Number(monthB.month_order || 0);
-      });
-    }
-
-    return result;
-  }
-
-  async function fetchDailyTraffic() {
-    return client
-      .from("daily_channel_traffic")
-      .select("*");
-  }
-
-  const [summaryResult, sourcesResult, trafficResult, dailyResult] = await Promise.all([
-    fetchSummaryMetrics(),
-    fetchFunnelSources(),
-    fetchMonthlyTraffic(),
-    fetchDailyTraffic()
-  ]);
-
-  const queryResults = [
-    { name: "summary_metrics", result: summaryResult },
-    { name: "funnel_sources", result: sourcesResult },
-    { name: "monthly_channel_traffic", result: trafficResult },
-    { name: "daily_channel_traffic", result: dailyResult }
-  ];
-
-  queryResults.forEach(function (query) {
-    if (query.result.error) {
-      console.warn(
-        `Supabase: ${query.name} tidak dapat dibaca. Dashboard tetap memakai tabel Supabase lain yang tersedia.`,
-        query.result.error
-      );
-    }
-  });
-
-  const successfulQueries = queryResults.filter(function (query) {
-    return !query.result.error;
-  });
-
-  if (successfulQueries.length === 0) {
-    throw new Error("Semua query tabel Supabase gagal.");
-  }
-
-  const dailyRows = dailyResult.error || !Array.isArray(dailyResult.data)
-    ? []
-    : dailyResult.data;
-
-  console.log("RAW daily_channel_traffic:", dailyRows);
-
-  const mappedData = mapSupabaseData(
-    summaryResult.error ? null : summaryResult.data,
-    sourcesResult.error ? [] : sourcesResult.data,
-    trafficResult.error ? [] : trafficResult.data,
-    dailyRows
-  );
-
-  if (!dailyResult.error) {
-    activeDataSource = "SUPABASE";
-  }
-
-  console.log("DATA SUPABASE", mappedData);
-
-  return mappedData;
-}
-
-async function fetchJsonFallbackData() {
-  if (window.location.protocol !== "file:") {
-    const response = await fetch("data_funnel.json");
-
-    if (response.ok) {
-      return response.json();
-    }
-  }
-
-  const localData = getLocalEduFunnelData();
-
-  if (validateEduFunnelData(localData)) {
-    return localData;
-  }
-
-  throw new Error("Fallback data_funnel tidak tersedia.");
-}
-
-async function fetchEduFunnelData() {
-  try {
-    app.innerHTML = `
-      <section class="loading-state">
-        <h2>Loading data...</h2>
-        <p>Sedang mengambil data dashboard dari Supabase.</p>
-      </section>
-    `;
-
-    appData = await fetchSupabaseData();
-    activeDataSource = "SUPABASE";
-    console.info("EduFunnel data source: SUPABASE");
-
-    setupNavigation();
-    setupFilters();
-
-    renderPage("overview");
-  } catch (error) {
-    activeDataSource = "supabase-error";
-    console.error(
-      "SUPABASE FETCH FAILED: dashboard tidak menerima data terbaru dari Supabase.",
-      error
-    );
-    console.warn(
-      "EduFunnel akan mencoba data_funnel.json sebagai fallback. Data fallback mungkin tidak sama dengan database."
-    );
-
-    try {
-      app.innerHTML = `
-        <section class="loading-state">
-          <h2>Loading data...</h2>
-          <p>Supabase belum tersedia. Menggunakan fallback data_funnel.json.</p>
-        </section>
-      `;
-
-      const fallbackData = await fetchJsonFallbackData();
-
-      if (!validateEduFunnelData(fallbackData)) {
-        throw new Error("Format fallback data_funnel tidak valid.");
-      }
-
-      appData = fallbackData;
-      activeDataSource = "json-fallback";
-      console.warn("EduFunnel data source: JSON FALLBACK", fallbackData);
-      setupNavigation();
-      setupFilters();
-      renderPage("overview");
-      return;
-    } catch (fallbackError) {
-      console.error("Gagal mengambil fallback data:", fallbackError);
-    }
-
-    app.innerHTML = `
-      <section class="empty-state">
-        <h2>Data gagal dimuat</h2>
-        <p>Query Supabase gagal dan fallback data_funnel tidak tersedia.</p>
-      </section>
-    `;
-  }
-}
-
-/* ================= NAVIGATION ================= */
+/* ================= NAVIGATION & FILTERS ================= */
 function setupNavigation() {
   const menuItems = document.querySelectorAll(".menu-item");
-
   menuItems.forEach(function (item) {
     item.onclick = function () {
-      setActiveMenu(item.dataset.page);
+      menuItems.forEach(m => m.classList.remove("active"));
+      item.classList.add("active");
       renderPage(item.dataset.page);
     };
   });
 }
 
-function setActiveMenu(page) {
-  const menuItems = document.querySelectorAll(".menu-item");
-
-  menuItems.forEach(function (item) {
-    item.classList.remove("active");
-
-    if (item.dataset.page === page) {
-      item.classList.add("active");
-    }
-  });
-}
-
-/* ================= FILTER ================= */
 function setupFilters() {
   if (channelFilter) {
-    channelFilter.onchange = function () {
-      currentChannel = channelFilter.value;
+    channelFilter.onchange = function (e) {
+      currentChannel = e.target.value;
       renderPage(currentPage);
     };
   }
-
   if (dateFilter) {
-    dateFilter.onchange = function () {
-      currentDateRange = dateFilter.value;
+    dateFilter.onchange = function (e) {
+      currentDateRange = e.target.value;
       renderPage(currentPage);
     };
   }
 }
 
-/* ================= DATE RANGE DATA ================= */
-function getMonthlyChannelTraffic() {
-  return appData.monthly_channel_traffic || [
-    { month: "Jan", google_ads: 19, instagram: 18, twitter_x: 23, website: 18 },
-    { month: "Feb", google_ads: 25, instagram: 22, twitter_x: 23, website: 20 },
-    { month: "Mar", google_ads: 14, instagram: 16, twitter_x: 14, website: 16 },
-    { month: "Apr", google_ads: 18, instagram: 23, twitter_x: 21, website: 29 },
-    { month: "May", google_ads: 29, instagram: 23, twitter_x: 24, website: 20 },
-    { month: "Jun", google_ads: 29, instagram: 13, twitter_x: 15, website: 27 },
-    { month: "Jul", google_ads: 12, instagram: 25, twitter_x: 17, website: 21 },
-    { month: "Aug", google_ads: 24, instagram: 26, twitter_x: 23, website: 31 },
-    { month: "Sep", google_ads: 19, instagram: 27, twitter_x: 15, website: 21 },
-    { month: "Oct", google_ads: 24, instagram: 26, twitter_x: 15, website: 14 },
-    { month: "Nov", google_ads: 15, instagram: 21, twitter_x: 21, website: 15 },
-    { month: "Dec", google_ads: 28, instagram: 26, twitter_x: 16, website: 19 }
-  ];
-}
+/* ================= 4-STAGE FUNNEL CALCULATION ================= */
+function get4StageData(channelKey = currentChannel) {
+  let impresi = 190000;
+  let pengunjung = 24200;
+  let kalkulator = 4780;
+  let deal = 560;
 
-function getLatestMonthlyTraffic() {
-  const monthlyData = getMonthlyChannelTraffic();
-
-  if (monthlyData.length === 0) {
-    return null;
+  if (channelKey === "Google Ads") {
+    impresi = 62000;
+    pengunjung = 8400;
+    kalkulator = 2030;
+    deal = 275;
+  } else if (channelKey === "Instagram") {
+    impresi = 88000;
+    pengunjung = 9800;
+    kalkulator = 1620;
+    deal = 145;
+  } else if (channelKey === "Twitter/X") {
+    impresi = 25000;
+    pengunjung = 2800;
+    kalkulator = 450;
+    deal = 48;
+  } else if (channelKey === "Website") {
+    impresi = 15000;
+    pengunjung = 3200;
+    kalkulator = 680;
+    deal = 92;
   }
 
-  const hasMonthOrder = monthlyData.some(function (item) {
-    return Number(item.month_order || 0) > 0;
-  });
+  // Multiply by date range factor
+  let factor = 1.0;
+  if (currentDateRange === "7") factor = 0.25;
+  if (currentDateRange === "month") factor = 1.0;
+  if (currentDateRange === "year") factor = 11.5;
 
-  if (!hasMonthOrder) {
-    return monthlyData[monthlyData.length - 1];
-  }
+  impresi = Math.round(impresi * factor);
+  pengunjung = Math.round(pengunjung * factor);
+  kalkulator = Math.round(kalkulator * factor);
+  deal = Math.round(deal * factor);
 
-  return monthlyData.reduce(function (latest, item) {
-    return Number(item.month_order || 0) > Number(latest.month_order || 0)
-      ? item
-      : latest;
-  }, monthlyData[0]);
-}
-
-function getDailyChannelTraffic() {
-  return Array.isArray(appData.daily_channel_traffic)
-    ? appData.daily_channel_traffic
-    : [];
-}
-
-function parseDailyTrafficDate(value) {
-  if (!value) return null;
-
-  const parsedDate = new Date(`${value}T00:00:00`);
-
-  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
-}
-
-function getAggregatedDailyData(range = currentDateRange, channel = currentChannel) {
-  const dailyRows = getDailyChannelTraffic();
-  const cacheKey = `${range}:${channel}`;
-
-  if (
-    dailyAggregationCache
-    && dailyAggregationCache.key === cacheKey
-    && dailyAggregationCache.rowsReference === dailyRows
-  ) {
-    return dailyAggregationCache.result;
-  }
-
-  if (dailyRows.length === 0) {
-    console.warn(
-      "Supabase: daily_channel_traffic kosong total. Menggunakan funnel_sources sebagai fallback."
-    );
-
-    const fallbackSources = (Array.isArray(appData.sources) ? appData.sources : [])
-      .filter(function (source) {
-        return channel === "all" || source.name === channel;
-      })
-      .map(function (source) {
-        const visitors = Number(source.pengunjung || 0);
-        const enrolled = Number(source.berkuliah || 0);
-        const conversionRate = calculateConversionRate(visitors, enrolled);
-
-        return {
-          ...source,
-          pengunjung: visitors,
-          daftar: Number(source.daftar || 0),
-          test: Number(source.test || 0),
-          daftar_ulang: Number(source.daftar_ulang || 0),
-          berkuliah: enrolled,
-          conversion_rate: Number(formatConversionRate(conversionRate)),
-          drop_off: visitors > 0 ? Number(formatConversionRate(100 - conversionRate)) : 0
-        };
-      });
-    const fallbackSummary = fallbackSources.reduce(function (totals, source) {
-      totals.total_pengunjung += Number(source.pengunjung || 0);
-      totals.total_daftar += Number(source.daftar || 0);
-      totals.total_test += Number(source.test || 0);
-      totals.total_daftar_ulang += Number(source.daftar_ulang || 0);
-      totals.total_berkuliah += Number(source.berkuliah || 0);
-
-      return totals;
-    }, {
-      total_pengunjung: 0,
-      total_daftar: 0,
-      total_test: 0,
-      total_daftar_ulang: 0,
-      total_berkuliah: 0
-    });
-    const fallbackResult = {
-      range: range,
-      channel: channel,
-      latestDate: null,
-      rows: [],
-      sources: fallbackSources,
-      summary: fallbackSummary,
-      conversion_rate: calculateConversionRate(
-        fallbackSummary.total_pengunjung,
-        fallbackSummary.total_berkuliah
-      ),
-      source: "funnel_sources_fallback"
-    };
-
-    dailyAggregationCache = {
-      key: cacheKey,
-      rowsReference: dailyRows,
-      result: fallbackResult
-    };
-
-    console.log("FINAL AGGREGATED DATA:", fallbackResult);
-
-    return fallbackResult;
-  }
-
-  const datedRows = dailyRows
-    .map(function (item) {
-      return {
-        item: item,
-        parsedDate: parseDailyTrafficDate(item.date)
-      };
-    })
-    .filter(function (entry) {
-      return entry.parsedDate;
-    });
-
-  const latestDate = datedRows.length > 0
-    ? datedRows.reduce(function (latest, entry) {
-      return entry.parsedDate > latest ? entry.parsedDate : latest;
-    }, datedRows[0].parsedDate)
-    : null;
-  let rangeRows = dailyRows;
-
-  if (latestDate && range === "7") {
-    const latestDates = [...new Set(
-      datedRows.map(function (entry) {
-        return entry.item.date;
-      })
-    )]
-      .sort(function (dateA, dateB) {
-        return parseDailyTrafficDate(dateB) - parseDailyTrafficDate(dateA);
-      })
-      .slice(0, 7);
-    const latestDateSet = new Set(latestDates);
-
-    rangeRows = datedRows
-      .filter(function (entry) {
-        return latestDateSet.has(entry.item.date);
-      })
-      .map(function (entry) {
-        return entry.item;
-      });
-  }
-
-  if (latestDate && range === "month") {
-    rangeRows = datedRows
-      .filter(function (entry) {
-        return entry.parsedDate.getFullYear() === latestDate.getFullYear()
-          && entry.parsedDate.getMonth() === latestDate.getMonth();
-      })
-      .map(function (entry) {
-        return entry.item;
-      });
-  }
-
-  if (latestDate && range === "year") {
-    rangeRows = datedRows
-      .filter(function (entry) {
-        return entry.parsedDate.getFullYear() === latestDate.getFullYear();
-      })
-      .map(function (entry) {
-        return entry.item;
-      });
-  }
-
-  const filteredRows = channel === "all"
-    ? rangeRows
-    : rangeRows.filter(function (item) {
-      return item.channel === channel;
-    });
-  const grouped = filteredRows.reduce(function (totals, item) {
-    const channelName = item.channel;
-
-    if (!totals[channelName]) {
-      totals[channelName] = {
-        pengunjung: 0,
-        daftar: 0,
-        test: 0,
-        daftar_ulang: 0,
-        berkuliah: 0
-      };
-    }
-
-    totals[channelName].pengunjung += Number(item.pengunjung || 0);
-    totals[channelName].daftar += Number(item.daftar || 0);
-    totals[channelName].test += Number(item.test || 0);
-    totals[channelName].daftar_ulang += Number(item.daftar_ulang || 0);
-    totals[channelName].berkuliah += Number(item.berkuliah || 0);
-
-    return totals;
-  }, {});
-  const selectedChannels = channel === "all"
-    ? Object.keys(CHANNEL_TRAFFIC_KEYS)
-    : [channel];
-  const sources = selectedChannels.map(function (channelName, index) {
-    const counts = grouped[channelName] || {
-      pengunjung: 0,
-      daftar: 0,
-      test: 0,
-      daftar_ulang: 0,
-      berkuliah: 0
-    };
-    const visitors = Number(counts.pengunjung);
-    const enrolled = Number(counts.berkuliah);
-    const conversionRate = calculateConversionRate(visitors, enrolled);
-
-    return {
-      name: channelName,
-      pengunjung: visitors,
-      daftar: Number(counts.daftar),
-      test: Number(counts.test),
-      daftar_ulang: Number(counts.daftar_ulang),
-      berkuliah: enrolled,
-      conversion_rate: conversionRate.toFixed(2),
-      drop_off: Number((100 - conversionRate).toFixed(2)),
-      progression_rates: {},
-      attrition_rates: {},
-      ranking: index + 1,
-      status: visitors === 0 ? "No Data" : conversionRate >= 5 ? "Stable" : "Alert"
-    };
-  });
-  const summary = sources.reduce(function (totals, source) {
-    totals.total_pengunjung += Number(source.pengunjung);
-    totals.total_daftar += Number(source.daftar);
-    totals.total_test += Number(source.test);
-    totals.total_daftar_ulang += Number(source.daftar_ulang);
-    totals.total_berkuliah += Number(source.berkuliah);
-
-    return totals;
-  }, {
-    total_pengunjung: 0,
-    total_daftar: 0,
-    total_test: 0,
-    total_daftar_ulang: 0,
-    total_berkuliah: 0
-  });
-  const result = {
-    range: range,
-    channel: channel,
-    latestDate: latestDate ? latestDate.toISOString().slice(0, 10) : null,
-    rows: filteredRows,
-    sources: sources,
-    summary: summary,
-    conversion_rate: calculateConversionRate(
-      summary.total_pengunjung,
-      summary.total_berkuliah
-    ),
-    source: "daily_channel_traffic"
-  };
-
-  dailyAggregationCache = {
-    key: cacheKey,
-    rowsReference: dailyRows,
-    result: result
-  };
-
-  console.log("FINAL AGGREGATED DATA:", result);
-
-  return result;
-}
-
-function getChartDataByDateRange() {
-  const monthlyData = getMonthlyChannelTraffic();
-  const latestMonth = getLatestMonthlyTraffic();
-  const dailySources = getAggregatedDailyData(currentDateRange, "all").sources;
-  const dailyVisitors = dailySources.reduce(function (totals, source) {
-    totals[source.name] = Number(source.pengunjung);
-    return totals;
-  }, {});
-  const dailyChartData = [
-    {
-      month: "Daily Traffic",
-      google_ads: Number(dailyVisitors["Google Ads"] || 0),
-      instagram: Number(dailyVisitors.Instagram || 0),
-      twitter_x: Number(dailyVisitors["Twitter/X"] || 0),
-      website: Number(dailyVisitors.Website || 0)
-    }
+  const stages = [
+    { label: "1. Impresi Iklan (IG/Google Ads)", count: impresi, key: "impresi" },
+    { label: "2. Pengunjung Web 3D", count: pengunjung, key: "pengunjung" },
+    { label: "3. Interaksi Kalkulator Harga", count: kalkulator, key: "kalkulator" },
+    { label: "4. Request Brief / Deal Proyek", count: deal, key: "deal" }
   ];
 
-  if (currentDateRange === "7") {
-    dailyChartData[0].month = "Last 7 Days";
-    return dailyChartData;
-  }
-
-  if (currentDateRange === "month" || currentDateRange === "30") {
-    return latestMonth ? [latestMonth] : dailyChartData;
-  }
-
-  if (currentDateRange === "year") {
-    return monthlyData.length > 0 ? monthlyData : dailyChartData;
-  }
-
-  return [];
+  return { impresi, pengunjung, kalkulator, deal, stages };
 }
 
-function getAggregatedYearlyData(channel = currentChannel) {
-  const yearlySources = (Array.isArray(appData.sources) ? appData.sources : [])
-    .filter(function (source) {
-      return channel === "all" || source.name === channel;
-    })
-    .map(function (source) {
-      const visitors = Number(source.pengunjung || 0);
-      const enrolled = Number(source.berkuliah || 0);
-      const conversionRate = calculateConversionRate(visitors, enrolled);
-
-      return {
-        ...source,
-        pengunjung: visitors,
-        daftar: Number(source.daftar || 0),
-        test: Number(source.test || 0),
-        daftar_ulang: Number(source.daftar_ulang || 0),
-        berkuliah: enrolled,
-        conversion_rate: Number(formatConversionRate(conversionRate)),
-        drop_off: visitors > 0 ? Number(formatConversionRate(100 - conversionRate)) : 0
-      };
-    });
-  const summary = yearlySources.reduce(function (totals, source) {
-    totals.total_pengunjung += Number(source.pengunjung);
-    totals.total_daftar += Number(source.daftar);
-    totals.total_test += Number(source.test);
-    totals.total_daftar_ulang += Number(source.daftar_ulang);
-    totals.total_berkuliah += Number(source.berkuliah);
-
-    return totals;
-  }, {
-    total_pengunjung: 0,
-    total_daftar: 0,
-    total_test: 0,
-    total_daftar_ulang: 0,
-    total_berkuliah: 0
-  });
-
-  const yearlyConversionRate = calculateConversionRate(
-    summary.total_pengunjung,
-    summary.total_berkuliah
-  );
-
-  return {
-    range: "year",
-    channel: channel,
-    sources: yearlySources,
-    summary: summary,
-    conversion_rate: Number(formatConversionRate(yearlyConversionRate)),
-    source: "funnel_sources"
+function getHighestDrop(stages) {
+  let highestDrop = {
+    label: "-",
+    value: 0,
+    percent: 0,
+    index: -1
   };
-}
 
-function getMonthlyChannelStageValue(monthRow, trafficKey, stage) {
-  const candidateKeys = [
-    `${trafficKey}_${stage}`,
-    `${stage}_${trafficKey}`
-  ];
-  const matchingKey = candidateKeys.find(function (key) {
-    return Object.prototype.hasOwnProperty.call(monthRow, key);
-  });
+  for (let i = 1; i < stages.length; i++) {
+    const prev = stages[i - 1];
+    const curr = stages[i];
+    if (prev.count === 0) continue;
 
-  return matchingKey ? Number(monthRow[matchingKey] || 0) : null;
-}
+    const dropVal = prev.count - curr.count;
+    const dropPct = (dropVal / prev.count) * 100;
 
-function getAggregatedMonthlyData(channel = currentChannel) {
-  const latestMonth = getLatestMonthlyTraffic();
-
-  if (!latestMonth) {
-    console.warn("Supabase: monthly_channel_traffic kosong. Tidak ada metrik This Month.");
-
-    return {
-      range: "month",
-      channel: channel,
-      sources: [],
-      summary: {
-        total_pengunjung: 0,
-        total_daftar: 0,
-        total_test: 0,
-        total_daftar_ulang: 0,
-        total_berkuliah: 0
-      },
-      conversion_rate: 0,
-      source: "monthly_channel_traffic"
-    };
-  }
-
-  const channelEntries = Object.entries(CHANNEL_TRAFFIC_KEYS)
-    .filter(function ([channelName]) {
-      return channel === "all" || channelName === channel;
-    });
-  const hasPerChannelFunnel = channelEntries.every(function ([, trafficKey]) {
-    return ["daftar", "test", "daftar_ulang", "berkuliah"].every(function (stage) {
-      return getMonthlyChannelStageValue(latestMonth, trafficKey, stage) !== null;
-    });
-  });
-  const allPerChannelEntries = Object.entries(CHANNEL_TRAFFIC_KEYS);
-  const perChannelFunnelHasData = allPerChannelEntries.some(function ([, trafficKey]) {
-    return ["daftar", "test", "daftar_ulang", "berkuliah"].some(function (stage) {
-      return Number(getMonthlyChannelStageValue(latestMonth, trafficKey, stage) || 0) > 0;
-    });
-  });
-  let sources = [];
-
-  if (hasPerChannelFunnel && perChannelFunnelHasData) {
-    sources = channelEntries.map(function ([channelName, trafficKey], index) {
-      const visitors = Number(latestMonth[trafficKey] || 0);
-      const daftar = getMonthlyChannelStageValue(latestMonth, trafficKey, "daftar");
-      const test = getMonthlyChannelStageValue(latestMonth, trafficKey, "test");
-      const daftarUlang = getMonthlyChannelStageValue(latestMonth, trafficKey, "daftar_ulang");
-      const enrolled = getMonthlyChannelStageValue(latestMonth, trafficKey, "berkuliah");
-      const conversionRate = calculateConversionRate(visitors, enrolled);
-
-      return {
-        name: channelName,
-        pengunjung: visitors,
-        daftar: daftar,
-        test: test,
-        daftar_ulang: daftarUlang,
-        berkuliah: enrolled,
-        conversion_rate: Number(formatConversionRate(conversionRate)),
-        drop_off: visitors > 0 ? Number(formatConversionRate(100 - conversionRate)) : 0,
-        progression_rates: {},
-        attrition_rates: {},
-        ranking: index + 1,
-        status: visitors === 0 ? "No Data" : conversionRate >= 5 ? "Stable" : "Alert"
+    if (dropPct > highestDrop.percent) {
+      highestDrop = {
+        label: `${prev.label} → ${curr.label}`,
+        value: dropVal,
+        percent: dropPct,
+        index: i
       };
-    });
-  } else if (channel === "all") {
-    if (hasPerChannelFunnel && !perChannelFunnelHasData) {
-      console.warn("Monthly per-channel funnel columns exist but contain zero data.");
-    }
-
-    sources = channelEntries.map(function ([channelName, trafficKey], index) {
-      const visitors = Number(latestMonth[trafficKey] || 0);
-      const daftar = Number(getMonthlyChannelStageValue(latestMonth, trafficKey, "daftar") || 0);
-      const test = Number(getMonthlyChannelStageValue(latestMonth, trafficKey, "test") || 0);
-      const daftarUlang = Number(
-        getMonthlyChannelStageValue(latestMonth, trafficKey, "daftar_ulang") || 0
-      );
-      const enrolled = Number(
-        getMonthlyChannelStageValue(latestMonth, trafficKey, "berkuliah") || 0
-      );
-      const conversionRate = calculateConversionRate(visitors, enrolled);
-
-      return {
-        name: channelName,
-        pengunjung: visitors,
-        daftar: daftar,
-        test: test,
-        daftar_ulang: daftarUlang,
-        berkuliah: enrolled,
-        conversion_rate: Number(formatConversionRate(conversionRate)),
-        drop_off: visitors > 0 ? Number(formatConversionRate(100 - conversionRate)) : 0,
-        progression_rates: {},
-        attrition_rates: {},
-        ranking: index + 1,
-        status: visitors === 0 ? "No Data" : conversionRate >= 5 ? "Stable" : "Alert"
-      };
-    });
-  } else {
-    const [channelName, trafficKey] = channelEntries[0];
-    const visitors = Number(latestMonth[trafficKey] || 0);
-
-    if (hasPerChannelFunnel && !perChannelFunnelHasData) {
-      console.warn("Monthly per-channel funnel columns exist but contain zero data.");
-    } else {
-      console.warn(
-        `Supabase: funnel bulanan per channel ${channelName} belum tersedia. Tambahkan kolom ${trafficKey}_daftar, ${trafficKey}_test, ${trafficKey}_daftar_ulang, dan ${trafficKey}_berkuliah.`
-      );
-    }
-
-    sources = [{
-      name: channelName,
-      pengunjung: visitors,
-      daftar: 0,
-      test: 0,
-      daftar_ulang: 0,
-      berkuliah: 0,
-      conversion_rate: 0,
-      drop_off: visitors > 0 ? 100 : 0,
-      progression_rates: {},
-      attrition_rates: {},
-      ranking: 1,
-      status: visitors > 0 ? "Stable" : "No Data"
-    }];
-  }
-
-  let summary = sources.reduce(function (totals, source) {
-    totals.total_pengunjung += Number(source.pengunjung || 0);
-    totals.total_daftar += Number(source.daftar || 0);
-    totals.total_test += Number(source.test || 0);
-    totals.total_daftar_ulang += Number(source.daftar_ulang || 0);
-    totals.total_berkuliah += Number(source.berkuliah || 0);
-    return totals;
-  }, {
-    total_pengunjung: 0,
-    total_daftar: 0,
-    total_test: 0,
-    total_daftar_ulang: 0,
-    total_berkuliah: 0
-  });
-
-  if (channel === "all") {
-    const detailSummary = summary;
-
-    summary = {
-      total_pengunjung: Object.values(CHANNEL_TRAFFIC_KEYS).reduce(function (total, trafficKey) {
-        return total + Number(latestMonth[trafficKey] || 0);
-      }, 0),
-      total_daftar: Number(latestMonth.daftar || 0),
-      total_test: Number(latestMonth.test || 0),
-      total_daftar_ulang: Number(latestMonth.daftar_ulang || 0),
-      total_berkuliah: Number(latestMonth.berkuliah || 0)
-    };
-
-    if (
-      hasPerChannelFunnel
-      && perChannelFunnelHasData
-      && (
-        detailSummary.total_daftar !== summary.total_daftar
-        || detailSummary.total_test !== summary.total_test
-        || detailSummary.total_daftar_ulang !== summary.total_daftar_ulang
-        || detailSummary.total_berkuliah !== summary.total_berkuliah
-      )
-    ) {
-      console.warn("Monthly channel detail totals do not match monthly total columns.", {
-        detailSummary: detailSummary,
-        monthlySummary: summary
-      });
     }
   }
 
-  return {
-    range: "month",
-    channel: channel,
-    sources: sources,
-    summary: summary,
-    conversion_rate: calculateConversionRate(
-      summary.total_pengunjung,
-      summary.total_berkuliah
-    ),
-    source: "monthly_channel_traffic"
-  };
+  return highestDrop;
 }
 
-function validateFunnelOrder(label, metrics) {
-  const values = [
-    Number(metrics.pengunjung ?? metrics.total_pengunjung ?? 0),
-    Number(metrics.daftar ?? metrics.total_daftar ?? 0),
-    Number(metrics.test ?? metrics.total_test ?? 0),
-    Number(metrics.daftar_ulang ?? metrics.total_daftar_ulang ?? 0),
-    Number(metrics.berkuliah ?? metrics.total_berkuliah ?? 0)
-  ];
-  const isValid = values.every(function (value, index) {
-    return index === 0 || values[index - 1] >= value;
-  });
-
-  if (!isValid) {
-    console.warn(`Invalid funnel order for ${label}.`, {
-      pengunjung: values[0],
-      daftar: values[1],
-      test: values[2],
-      daftar_ulang: values[3],
-      berkuliah: values[4]
-    });
-  }
-}
-
-function recalculateMetricsFromChannelRows(metrics) {
-  const channelRows = (Array.isArray(metrics.sources) ? metrics.sources : []).map(function (source) {
-    const visitors = Number(source.pengunjung || 0);
-    const enrolled = Number(source.berkuliah || 0);
-    const conversionRate = calculateConversionRate(visitors, enrolled);
-
-    return {
-      ...source,
-      pengunjung: visitors,
-      daftar: Number(source.daftar || 0),
-      test: Number(source.test || 0),
-      daftar_ulang: Number(source.daftar_ulang || 0),
-      berkuliah: enrolled,
-      conversion_rate: Number(formatConversionRate(conversionRate)),
-      drop_off: visitors > 0 ? Number(formatConversionRate(100 - conversionRate)) : 0
-    };
-  });
-  const totals = channelRows.reduce(function (result, row) {
-    result.total_pengunjung += row.pengunjung;
-    result.total_daftar += row.daftar;
-    result.total_test += row.test;
-    result.total_daftar_ulang += row.daftar_ulang;
-    result.total_berkuliah += row.berkuliah;
-
-    return result;
-  }, {
-    total_pengunjung: 0,
-    total_daftar: 0,
-    total_test: 0,
-    total_daftar_ulang: 0,
-    total_berkuliah: 0
-  });
-
-  totals.total_conversion_rate = calculateConversionRate(
-    totals.total_pengunjung,
-    totals.total_berkuliah
-  );
-
-  console.log("CHANNEL ROWS", channelRows);
-  console.log("TOTAL RECALCULATED", totals);
-
-  return {
-    ...metrics,
-    sources: channelRows,
-    summary: totals,
-    conversion_rate: totals.total_conversion_rate
-  };
-}
-
-function getMetricsByRangeAndChannel(range = currentDateRange, channel = currentChannel) {
-  let metrics;
-
-  if (range === "month" || range === "30") {
-    metrics = getAggregatedMonthlyData(channel);
-  } else if (range === "year") {
-    metrics = getAggregatedYearlyData(channel);
-  } else {
-    metrics = getAggregatedDailyData("7", channel);
-  }
-
-  metrics = recalculateMetricsFromChannelRows(metrics);
-
-  metrics.sources.forEach(function (source) {
-    validateFunnelOrder(`${metrics.source}:${source.name}`, source);
-  });
-  validateFunnelOrder(`${metrics.source}:summary`, metrics.summary);
-
-  console.log("METRICS SOURCE", {
-    range: range,
-    channel: channel,
-    sourceTable: metrics.source,
-    metrics: metrics
-  });
-
-  return metrics;
-}
-
-/* ================= FILTERED DATA ================= */
-function getFilteredSources() {
-  return getMetricsByRangeAndChannel(currentDateRange, currentChannel).sources;
-}
-
-function getFilteredSummary() {
-  return getMetricsByRangeAndChannel(currentDateRange, currentChannel).summary;
-}
-
-function getDateRangeLabel() {
-  if (currentDateRange === "month" || currentDateRange === "30") return "This Month";
-  if (currentDateRange === "year") return "This Year";
-  return "Last 7 Days";
-}
-
-function getChannelTrafficTitle() {
-  if (currentDateRange === "month" || currentDateRange === "30") {
-    return "This Month Channel Traffic";
-  }
-  if (currentDateRange === "year") return "Monthly Channel Traffic";
-  return "Last 7 Days Channel Traffic";
-}
-
-function formatAnimatedNumber(value, format, decimals) {
-  if (format === "percent") {
-    return `${Number(value).toFixed(decimals)}%`;
-  }
-
-  if (format === "decimal") {
-    return Number(value).toFixed(decimals);
-  }
-
-  return Math.round(Number(value)).toLocaleString("id-ID");
-}
-
-function formatConversionRate(value) {
-  const numericValue = Number(value);
-
-  return Number.isFinite(numericValue) ? numericValue.toFixed(2) : "0.00";
-}
-
-function calculateConversionRate(visitors, enrolled) {
-  const visitorCount = Number(visitors || 0);
-  const enrolledCount = Number(enrolled || 0);
-
-  return visitorCount === 0 ? 0 : (enrolledCount / visitorCount) * 100;
-}
-
-function animateNumber(element, targetValue, options = {}) {
-  const duration = options.duration || 900;
-  const format = options.format || "int";
-  const decimals = Number(options.decimals || 0);
-  const target = Number(targetValue);
-  const startTime = performance.now();
-
-  if (!Number.isFinite(target)) return;
-
-  function updateFrame(now) {
-    const elapsed = now - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const easedProgress = 1 - Math.pow(1 - progress, 4);
-    const currentValue = target * easedProgress;
-
-    element.textContent = formatAnimatedNumber(currentValue, format, decimals);
-
-    if (progress < 1) {
-      requestAnimationFrame(updateFrame);
-    } else {
-      element.textContent = formatAnimatedNumber(target, format, decimals);
-    }
-  }
-
-  element.textContent = formatAnimatedNumber(0, format, decimals);
-  requestAnimationFrame(updateFrame);
-}
-
-function animateCountUps() {
-  document.querySelectorAll("[data-count-up]").forEach(function (element) {
-    animateNumber(element, element.dataset.value, {
-      format: element.dataset.format || "int",
-      decimals: element.dataset.decimals || 0,
-      duration: 900
-    });
-  });
-}
-
-function animateProgressBars() {
-  document.querySelectorAll(".bar-fill[data-width]").forEach(function (bar) {
-    bar.style.width = "0%";
-
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        bar.style.width = `${bar.dataset.width}%`;
-      });
-    });
-  });
-}
-
-function runDashboardAnimations() {
-  animateCountUps();
-  animateProgressBars();
-}
-
-function getReportExportMarkup() {
-  return `
-    <div class="report-export">
-      <button class="auth-button report-btn" type="button" data-report-toggle>
-        Generate Detailed Report
-      </button>
-
-      <div class="export-menu" hidden>
-        <button type="button" data-export-type="pdf">Download PDF</button>
-        <button type="button" data-export-type="csv">Download Excel/CSV</button>
-        <button type="button" data-export-type="json">Download JSON</button>
-      </div>
-    </div>
-  `;
-}
-
-function renderEmptyState() {
-  app.innerHTML = `
-    <section class="empty-state">
-      <h2>Data tidak ditemukan</h2>
-      <p>Coba ubah filter channel, rentang tanggal, atau keyword pencarian.</p>
-    </section>
-  `;
-}
-
-/* ================= PAGE RENDER ================= */
+/* ================= PAGE ROUTER ================= */
 function renderPage(page) {
   currentPage = page;
 
@@ -1566,103 +422,53 @@ function renderPage(page) {
   setupReportExport();
 }
 
-/* ================= HELPERS ================= */
-function getTotalConversionRate(metrics = getMetricsByRangeAndChannel(
-  currentDateRange,
-  currentChannel
-)) {
-
-  return formatConversionRate(metrics.conversion_rate);
-}
-
-function getSummaryStages(summary = getFilteredSummary()) {
-
-  return [
-    { label: "Pengunjung", count: Number(summary.total_pengunjung) },
-    { label: "Daftar", count: Number(summary.total_daftar) },
-    { label: "Test", count: Number(summary.total_test) },
-    { label: "Daftar Ulang", count: Number(summary.total_daftar_ulang) },
-    { label: "Berkuliah", count: Number(summary.total_berkuliah) }
-  ];
-}
-
-function getHighestDrop(stages) {
-  let highestDrop = {
-    label: "-",
-    value: 0,
-    percent: 0
-  };
-
-  for (let i = 1; i < stages.length; i++) {
-    const previous = stages[i - 1];
-    const current = stages[i];
-
-    if (previous.count === 0) continue;
-
-    const dropValue = previous.count - current.count;
-    const dropPercent = (dropValue / previous.count) * 100;
-
-    if (dropValue > highestDrop.value) {
-      highestDrop = {
-        label: `${previous.label} ke ${current.label}`,
-        value: dropValue,
-        percent: dropPercent
-      };
-    }
-  }
-
-  return highestDrop;
-}
-
-/* ================= OVERVIEW ================= */
+/* ================= 1. OVERVIEW ================= */
 function renderOverview() {
-  const metrics = getMetricsByRangeAndChannel(currentDateRange, currentChannel);
-  const filteredSources = metrics.sources;
-
-  if (filteredSources.length === 0) {
-    renderEmptyState();
-    return;
-  }
-
-  const summary = metrics.summary;
-  const stages = getSummaryStages(summary);
+  const { impresi, pengunjung, kalkulator, deal, stages } = get4StageData();
   const highestDrop = getHighestDrop(stages);
-
-  const bestSource = [...filteredSources].sort(function (a, b) {
-    return Number(b.conversion_rate) - Number(a.conversion_rate);
-  })[0];
+  const convWebToDeal = ((deal / pengunjung) * 100).toFixed(2);
+  const convCalcToDeal = ((deal / kalkulator) * 100).toFixed(1);
 
   app.innerHTML = `
     <section class="page-title">
-      <p>STUDENT ACQUISITION OVERVIEW</p>
-      <h1>Student Acquisition Overview</h1>
-      <span>Monitor ${getDateRangeLabel().toLowerCase()} conversion dynamics and pinpoint friction in the enrollment pipeline.</span>
+      <p>DIMENSION3D STUDIO &bull; ACQUISITION OVERVIEW</p>
+      <h1>Overview Corong Bisnis 3D Design</h1>
+      <span>Pantau performa trafik portofolio, simulasi kalkulator harga, dan konversi deal proyek 3D.</span>
     </section>
 
     <section class="summary">
       <div class="summary-card">
-        <h3>Total Visitors</h3>
-        <p data-count-up data-value="${summary.total_pengunjung}">${summary.total_pengunjung.toLocaleString("id-ID")}</p>
+        <h3>Total Impresi Iklan</h3>
+        <p data-count-up data-value="${impresi}">${impresi.toLocaleString("id-ID")}</p>
       </div>
 
       <div class="summary-card">
-        <h3>Qualified Leads</h3>
-        <p data-count-up data-value="${summary.total_daftar}">${summary.total_daftar.toLocaleString("id-ID")}</p>
+        <h3>Pengunjung Web 3D</h3>
+        <p data-count-up data-value="${pengunjung}">${pengunjung.toLocaleString("id-ID")}</p>
       </div>
 
       <div class="summary-card">
-        <h3>Conversion Rate</h3>
-        <p data-count-up data-value="${getTotalConversionRate(metrics)}" data-format="percent" data-decimals="2">${getTotalConversionRate(metrics)}%</p>
+        <h3>Coba Kalkulator Harga</h3>
+        <p data-count-up data-value="${kalkulator}">${kalkulator.toLocaleString("id-ID")}</p>
+      </div>
+
+      <div class="summary-card">
+        <h3>Deal Proyek 3D</h3>
+        <p data-count-up data-value="${deal}">${deal.toLocaleString("id-ID")}</p>
       </div>
     </section>
 
-    <!-- Core DIP Indicator: Titik Kebocoran Tertinggi Otomatis Diberi Aksen Merah -->
+    <!-- Critical Leak Alert Banner: BOCOR PARAH -->
     <div class="leak-alert-banner">
       <div class="leak-icon">⚠️</div>
       <div class="leak-content">
-        <h4>Critical Leak Alert &bull; Titik Kebocoran Tertinggi Terdeteksi!</h4>
-        <p>Drop-off tertinggi sebesar <strong>${highestDrop.percent.toFixed(1)}%</strong> terjadi pada transisi <strong>"${highestDrop.label}"</strong> (Kehilangan ${highestDrop.value.toLocaleString("id-ID")} calon siswa potensial).</p>
-        <div class="leak-rec">💡 <strong>Rekomendasi Tindakan Pak Hendra:</strong> Hubungi pendaftar via WhatsApp otomatis n8n dan persingkat formulir pendaftaran untuk menekan angka kebocoran.</div>
+        <h4><span class="bocor-parah-badge">🚨 BOCOR PARAH TERDETEKSI!</span> Drop-off Klien Tertinggi</h4>
+        <p>Terjadi penurunan ekstrem sebesar <strong style="color:#b91c1c; font-weight:800;">${highestDrop.percent.toFixed(1)}% drop-off</strong> pada transisi <strong>"${highestDrop.label}"</strong> (Kehilangan ${highestDrop.value.toLocaleString("id-ID")} calon klien potensial).</p>
+        <div class="leak-rec">💡 <strong>Rekomendasi Taktis Lead 3D Artist:</strong> ${
+          highestDrop.label.includes("Kalkulator")
+            ? "Calon klien menghitung estimasi biaya di kalkulator namun batal submit brief. Pasang tombol 'Konsultasi WhatsApp Instan dengan 3D Artist' langsung di hasil simulasi harga dan tawarkan potongan 10% untuk project pertama."
+            : "Banyak pengunjung portofolio keluar tanpa mencoba kalkulator simulasi harga. Sederhanakan tombol CTA kalkulator harga di galeri visual 3D dan pastikan waktu muat halaman di bawah 2 detik."
+        }</div>
       </div>
     </div>
 
@@ -1670,32 +476,24 @@ function renderOverview() {
       <div class="card">
         <div class="section-header">
           <div>
-            <h2>Acquisition Funnel</h2>
-            <span>Visitor-to-Enrollment Flow</span>
+            <h2>Corong Konversi Klien 3D (4 Tahap)</h2>
+            <span>Visualisasi pergerakan calon klien dari impresi iklan s/d deal proyek</span>
           </div>
         </div>
-
         <div id="overviewFunnel"></div>
       </div>
 
       <aside class="card insight-card">
-        <h2>Key Insight</h2>
+        <h2>Key Efficiency Metrics</h2>
+        <div class="insight-value" data-count-up data-value="${convWebToDeal}" data-format="percent" data-decimals="2">${convWebToDeal}%</div>
+        <p>Overall Conversion Rate dari Pengunjung Web 3D menjadi Deal Proyek resmi.</p>
 
-        <div class="insight-value" data-count-up data-value="${highestDrop.percent.toFixed(1)}" data-format="percent" data-decimals="1">${highestDrop.percent.toFixed(1)}%</div>
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 16px 0;" />
+        <p><strong>Rasio Pengunjung ke Kalkulator:</strong> ${((kalkulator / pengunjung) * 100).toFixed(1)}%</p>
+        <p style="margin-top: 6px;"><strong>Rasio Kalkulator ke Deal:</strong> ${convCalcToDeal}%</p>
 
-        <p>
-          Significant drop-off detected between
-          <strong>${highestDrop.label}</strong>.
-          Total users lost: <span data-count-up data-value="${highestDrop.value}">${highestDrop.value.toLocaleString("id-ID")}</span>.
-        </p>
-
-        <hr />
-
-        <p>
-          Best channel:
-          <strong>${bestSource.name}</strong>
-          with conversion rate ${formatConversionRate(bestSource.conversion_rate)}%.
-        </p>
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 16px 0;" />
+        <p>Saluran dengan konversi tertinggi: <strong>Google Search Ads (3.27% CVR)</strong></p>
 
         ${getReportExportMarkup()}
       </aside>
@@ -1705,170 +503,144 @@ function renderOverview() {
   renderFunnelBars("overviewFunnel", stages);
 }
 
-/* ================= LEAK ANALYTICS & ADS COMPARISON (CORE DIP) ================= */
+/* ================= 2. LEAK ANALYTICS & ADS COMPARISON ================= */
 function renderLeakAnalytics() {
-  let impresi = 125000;
-  let klik = 14200;
-  let isiForm = 1850;
-  let diterima = 320;
-
-  if (currentChannel === "Google Ads") {
-    impresi = 58000;
-    klik = 7400;
-    isiForm = 1120;
-    diterima = 210;
-  } else if (currentChannel === "Instagram" || currentChannel === "Instagram Ads") {
-    impresi = 67000;
-    klik = 6800;
-    isiForm = 730;
-    diterima = 110;
-  }
-
-  const stages4 = [
-    { label: "1. Impresi Ads", count: impresi },
-    { label: "2. Klik", count: klik },
-    { label: "3. Form PMB", count: isiForm },
-    { label: "4. Conversion", count: diterima }
-  ];
-
-  const highestDrop = getHighestDrop(stages4);
-  const recentLeads = JSON.parse(localStorage.getItem("leaktrace_recent_leads") || "[]");
+  const { impresi, pengunjung, kalkulator, deal, stages } = get4StageData();
+  const highestDrop = getHighestDrop(stages);
+  const leads = getStoredLeads().slice(0, 4);
 
   app.innerHTML = `
     <section class="page-title">
-      <p>STARTUP EDUFLOW &bull; DESAIN INTERAKSI PENGGUNA (DIP)</p>
+      <p>DIMENSION3D &bull; FUNNEL DROP-OFF INTELLIGENCE</p>
       <h1>Funnel Analytics & Indikator Bocor Parah</h1>
-      <span>Dashboard Klien: <strong>Pak Hendra</strong> (Head of Marketing & Admission, Akademi Skill Nusantara).</span>
+      <span>Sistem audit kebocoran prospek klien pada corong jasa desain 3D & render komersial.</span>
     </section>
 
     <!-- Critical Leak Alert Banner: BOCOR PARAH -->
     <div class="leak-alert-banner">
       <div class="leak-icon">🚨</div>
       <div class="leak-content">
-        <h4><span class="bocor-parah-badge">🚨 BOCOR PARAH TERDETEKSI!</span> Penurunan Ekstrem Calon Siswa</h4>
-        <p>Terjadi kebocoran drastis sebesar <strong style="color:#b91c1c; font-weight:800;">${highestDrop.percent.toFixed(1)}% drop-off</strong> pada transisi <strong>"${highestDrop.label}"</strong> (Kehilangan ${highestDrop.value.toLocaleString("id-ID")} calon pendaftar potensial).</p>
-        <div class="leak-rec">🎯 <strong>Rekomendasi Strategis EduFlow untuk Pak Hendra:</strong> ${highestDrop.label.includes("Klik") ? "Banyak pengunjung klik iklan tetapi keluar di halaman form. Kurangi kolom isian form dan picu otomatisasi WhatsApp via n8n begitu siswa submit." : "Otomatisasi n8n akan mengirim pesan WhatsApp reminder 24 jam jika status siswa masih tertahan di formulir."}</div>
+        <h4><span class="bocor-parah-badge">🚨 BOCOR PARAH TERDETEKSI!</span> Penurunan Ekstrem Calon Klien 3D</h4>
+        <p>Terjadi kebocoran drastis sebesar <strong style="color:#b91c1c; font-weight:800;">${highestDrop.percent.toFixed(1)}% drop-off</strong> pada transisi <strong>"${highestDrop.label}"</strong> (Kehilangan ${highestDrop.value.toLocaleString("id-ID")} potensi brief proyek).</p>
+        <div class="leak-rec">🎯 <strong>Rekomendasi Optimalisasi Studio:</strong> Terapkan <em>instant WhatsApp consultation</em> dan sediakan opsi upload file referensi (.obj, .fbx, sketsa CAD, foto produk) langsung pada form kalkulator untuk memangkas friksi komunikasi klien.</div>
       </div>
     </div>
 
-    <!-- Metric Cards 4 Tahap -->
+    <!-- 4 Stage Metric Cards -->
     <section class="summary">
       <div class="summary-card">
-        <h3>Total Impresi Ads</h3>
+        <h3>1. Impresi Iklan</h3>
         <p data-count-up data-value="${impresi}">${impresi.toLocaleString("id-ID")}</p>
       </div>
       <div class="summary-card">
-        <h3>Klik Link (Traffic)</h3>
-        <p data-count-up data-value="${klik}">${klik.toLocaleString("id-ID")}</p>
+        <h3>2. Pengunjung Web 3D</h3>
+        <p data-count-up data-value="${pengunjung}">${pengunjung.toLocaleString("id-ID")}</p>
       </div>
       <div class="summary-card">
-        <h3>Pengisi Form PMB</h3>
-        <p data-count-up data-value="${isiForm}">${isiForm.toLocaleString("id-ID")}</p>
+        <h3>3. Coba Kalkulator</h3>
+        <p data-count-up data-value="${kalkulator}">${kalkulator.toLocaleString("id-ID")}</p>
       </div>
       <div class="summary-card">
-        <h3>Siswa Diterima</h3>
-        <p data-count-up data-value="${diterima}">${diterima.toLocaleString("id-ID")}</p>
+        <h3>4. Deal Proyek 3D</h3>
+        <p data-count-up data-value="${deal}">${deal.toLocaleString("id-ID")}</p>
       </div>
     </section>
 
-    <!-- Corong 4 Tahap & Komparasi Ads -->
     <section class="dashboard-grid">
       <div class="card">
         <div class="section-header">
           <div>
             <h2>Interactive 4-Stage Funnel Chart</h2>
-            <span>Visualisasi corong penyerapan calon siswa dari impresi iklan s/d diterima</span>
+            <span>Indikator warna merah otomatis menyala pada tahap dengan kebocoran tertinggi</span>
           </div>
         </div>
         <div id="dipFunnelBars"></div>
       </div>
 
       <aside class="card insight-card">
-        <h2>Analisis Efektivitas Iklan</h2>
-        <div class="insight-value" data-count-up data-value="${((diterima / impresi) * 100).toFixed(2)}" data-format="percent" data-decimals="2">${((diterima / impresi) * 100).toFixed(2)}%</div>
-        <p>Overall Conversion Rate dari impresi pertama hingga resmi menjadi mahasiswa.</p>
+        <h2>Efisiensi Anggaran Iklan</h2>
+        <div class="insight-value" data-count-up data-value="${((deal / impresi) * 100).toFixed(2)}" data-format="percent" data-decimals="2">${((deal / impresi) * 100).toFixed(2)}%</div>
+        <p>Rasio deal bersih dari impresi iklan berbayar studio.</p>
         <hr style="border: none; border-top: 1px solid var(--border); margin: 16px 0;" />
-        <p><strong>Rasio Klik ke Form:</strong> ${((isiForm / klik) * 100).toFixed(1)}%</p>
-        <p style="margin-top:6px;"><strong>Rasio Form ke Diterima:</strong> ${((diterima / isiForm) * 100).toFixed(1)}%</p>
+        <p><strong>Est. Biaya per Deal (CPA):</strong> Rp 185.000 / Proyek</p>
+        <p style="margin-top:6px;"><strong>Avg. Nilai Proyek 3D:</strong> Rp 8.500.000 / Proyek</p>
         <hr style="border: none; border-top: 1px solid var(--border); margin: 16px 0;" />
-        <a href="home.html#kalkulator" class="header-portal-btn" style="width: 100%; justify-content: center;">
-          🔎 Uji Coba Kalkulator Simulasi di Home &rarr;
-        </a>
+        <p style="color: #10b981; font-weight:700;">✅ ROI Iklan: 4.5x Lipat</p>
       </aside>
     </section>
 
-    <!-- Side-by-Side Comparison: Google Ads vs Instagram Ads (DIP Tahap 3B) -->
+    <!-- Head-to-Head: Google Ads vs Instagram Ads for 3D Studio -->
     <div style="margin-top: 28px;">
-      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">Komparasi Head-to-Head: Instagram Ads vs Google Ads</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">Memudahkan Pak Hendra mengambil keputusan alokasi anggaran iklan berikutnya tanpa buka spreadsheet manual.</p>
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">Komparasi Head-to-Head: Google Ads vs Instagram Ads</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">Analisis efektivitas mendatangkan klien korporat B2B vs agensi kreatif untuk alokasi budget iklan bulanan.</p>
 
       <div class="ads-compare-grid">
-        <!-- Google Ads Card -->
+        <!-- Google Ads -->
         <div class="ads-card">
           <div class="ads-card-header">
-            <span class="ads-tag tag-google">🔍 Google Search Ads</span>
+            <span class="ads-tag tag-google">🔍 Google Search Ads (B2B Intent)</span>
             <span style="font-size: 0.85rem; color: #10b981; font-weight: 700;">Konversi Tinggi</span>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">Impresi</div>
-              <strong style="font-size: 1.1rem; color: var(--text-main);">58.000</strong>
+              <strong style="font-size: 1.1rem; color: var(--text-main);">62.000</strong>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">Klik Link</div>
-              <strong style="font-size: 1.1rem; color: var(--text-main);">7.400 (CTR 12.7%)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Pengunjung Web</div>
+              <strong style="font-size: 1.1rem; color: var(--text-main);">8.400 (CTR 13.5%)</strong>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">Isi Form</div>
-              <strong style="font-size: 1.1rem; color: var(--text-main);">1.120</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Coba Kalkulator</div>
+              <strong style="font-size: 1.1rem; color: var(--text-main);">2.030 (24.2%)</strong>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">Siswa Diterima</div>
-              <strong style="font-size: 1.1rem; color: var(--primary);">210 (18.7%)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Deal Proyek 3D</div>
+              <strong style="font-size: 1.1rem; color: var(--primary);">275 (13.5% Deal)</strong>
             </div>
           </div>
           <p style="font-size: 0.85rem; color: #475569; border-top: 1px solid var(--border); padding-top: 12px; line-height: 1.5;">
-            Audience Google Search memiliki intensi belajar tinggi karena aktif mencari jurusan. Tingkat drop-off form ke diterima relatif rendah (18.7% konversi).
+            Target keyword "jasa 3d rendering", "animasi produk 3d", dan "3d modeling B2B" menghasilkan klien serius dengan konversi deal tinggi.
           </p>
         </div>
 
-        <!-- Instagram Ads Card -->
+        <!-- Instagram Ads -->
         <div class="ads-card">
           <div class="ads-card-header">
-            <span class="ads-tag tag-ig">📸 Instagram Ads (Reels)</span>
+            <span class="ads-tag tag-ig">📸 Instagram Ads (Reels 3D Portfolio)</span>
             <span style="font-size: 0.85rem; color: #ef4444; font-weight: 700;">⚠️ Titik Kebocoran Tinggi</span>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">Impresi</div>
-              <strong style="font-size: 1.1rem; color: var(--text-main);">67.000</strong>
+              <strong style="font-size: 1.1rem; color: var(--text-main);">88.000</strong>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">Klik Link</div>
-              <strong style="font-size: 1.1rem; color: var(--text-main);">6.800 (CTR 10.1%)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Pengunjung Web</div>
+              <strong style="font-size: 1.1rem; color: var(--text-main);">9.800 (CTR 11.1%)</strong>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">Isi Form</div>
-              <strong style="font-size: 1.1rem; color: #dc2626;">730 (Drop 89.2%)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Coba Kalkulator</div>
+              <strong style="font-size: 1.1rem; color: #dc2626;">1.620 (Drop 83.5%)</strong>
             </div>
             <div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">Siswa Diterima</div>
-              <strong style="font-size: 1.1rem; color: var(--primary);">110 (15.0%)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Deal Proyek 3D</div>
+              <strong style="font-size: 1.1rem; color: var(--primary);">145 (8.95% Deal)</strong>
             </div>
           </div>
           <p style="font-size: 0.85rem; color: #475569; border-top: 1px solid var(--border); padding-top: 12px; line-height: 1.5;">
-            Trafik Instagram banyak yang keluar setelah klik link karena scrolling santai. <strong>Disarankan mengaktifkan otomatisasi nurturing n8n & reminder beasiswa.</strong>
+            Audiens Instagram terpukau dengan visual 3D render tetapi mayoritas hanya scrolling santai. <strong>Disarankan pasang pop-up 'Download Price Guide PDF' untuk menangkap email mereka.</strong>
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Live Incoming Leads Table (Real-time from Landing Page PMB) -->
+    <!-- Recent UX Calculator Interactions -->
     <div class="card" style="margin-top: 28px;">
       <div class="section-header">
         <div>
-          <h2>Data Masuk Calon Siswa Terbaru (Live Webhook Sync)</h2>
-          <span>Pendaftar yang baru mengirimkan form dari Landing Page PMB</span>
+          <h2>Riwayat Interaksi Kalkulator Calon Klien (Live UX Logs)</h2>
+          <span>Calon klien yang baru saja menghitung estimasi biaya proyek 3D</span>
         </div>
       </div>
       <div class="table-wrapper">
@@ -1876,43 +648,24 @@ function renderLeakAnalytics() {
           <thead>
             <tr>
               <th>ID Lead</th>
-              <th>Nama Lengkap</th>
-              <th>No. WhatsApp</th>
-              <th>Email</th>
-              <th>Program Studi</th>
+              <th>Nama Klien / Perusahaan</th>
+              <th>Layanan 3D</th>
+              <th>Spesifikasi Render</th>
+              <th>Estimasi Harga</th>
               <th>Sumber Iklan</th>
-              <th>Status n8n</th>
+              <th>Status Deal</th>
             </tr>
           </thead>
           <tbody>
-            ${recentLeads.length === 0 ? `
-              <tr>
-                <td>LD-2026-0042</td>
-                <td>Budi Santoso</td>
-                <td>081234567890</td>
-                <td>budi.santoso@gmail.com</td>
-                <td>Fullstack Web Development</td>
-                <td><span class="ads-tag tag-ig">Instagram Ads</span></td>
-                <td><span style="color:#10b981; font-weight:700;">✅ WA Brosur Sent</span></td>
-              </tr>
-              <tr>
-                <td>LD-2026-0043</td>
-                <td>Siti Nurhaliza</td>
-                <td>081987654321</td>
-                <td>siti.nur@yahoo.com</td>
-                <td>UI/UX & Product Design</td>
-                <td><span class="ads-tag tag-google">Google Ads</span></td>
-                <td><span style="color:#10b981; font-weight:700;">✅ WA Brosur Sent</span></td>
-              </tr>
-            ` : recentLeads.map(lead => `
+            ${leads.map(lead => `
               <tr>
                 <td><strong>${lead.lead_id}</strong></td>
                 <td>${lead.full_name}</td>
-                <td>${lead.whatsapp}</td>
-                <td>${lead.email}</td>
-                <td>${lead.program_study}</td>
-                <td><span class="ads-tag ${lead.utm_source.includes('Google') ? 'tag-google' : 'tag-ig'}">${lead.utm_source}</span></td>
-                <td><span style="color:#10b981; font-weight:700;">⚡ Sync via n8n</span></td>
+                <td>${lead.service_type}</td>
+                <td><small style="color:var(--text-muted);">${lead.specifications}</small></td>
+                <td><strong style="color:var(--primary);">${lead.estimated_price}</strong></td>
+                <td><span class="ads-tag ${lead.utm_source.includes('Google') ? 'tag-google' : 'tag-ig'}">${lead.utm_source.split(' ')[0]} Ads</span></td>
+                <td><span style="color:#10b981; font-weight:700;">⚡ ${lead.status}</span></td>
               </tr>
             `).join("")}
           </tbody>
@@ -1921,107 +674,150 @@ function renderLeakAnalytics() {
     </div>
   `;
 
-  renderFunnelBars("dipFunnelBars", stages4);
+  renderFunnelBars("dipFunnelBars", stages);
 }
 
-/* ================= CHANNEL ANALYSIS ================= */
+/* ================= 3. CHANNEL ANALYSIS ================= */
 function renderChannelAnalysis() {
-  const metrics = getMetricsByRangeAndChannel(currentDateRange, currentChannel);
-  const filteredSources = metrics.sources;
+  const sources = (appData && appData.sources) || [];
 
-  if (filteredSources.length === 0) {
-    renderEmptyState();
-    return;
-  }
+  const cardsHtml = sources.map(source => `
+    <div class="channel-card">
+      <div class="channel-top">
+        <h2>${source.name}</h2>
+        <span class="badge ${source.badge_class || 'stable'}">${source.status}</span>
+      </div>
+      <p class="label">Pengunjung Web 3D</p>
+      <h3 data-count-up data-value="${source.pengunjung}">${source.pengunjung.toLocaleString("id-ID")}</h3>
 
-  const channelCards = filteredSources.map(function (source) {
-    const badgeClass = source.status === "Alert" ? "risk" : "stable";
-
-    return `
-      <div class="channel-card">
-        <div class="channel-top">
-          <h2>${source.name}</h2>
-          <span class="badge ${badgeClass}">${source.status}</span>
+      <div class="channel-stats">
+        <div>
+          <span>Coba Kalkulator</span>
+          <strong>${source.kalkulator ? source.kalkulator.toLocaleString("id-ID") : "-"}</strong>
         </div>
-
-        <p class="label">Visitors</p>
-        <h3 data-count-up data-value="${Number(source.pengunjung)}">${Number(source.pengunjung).toLocaleString("id-ID")}</h3>
-
-        <div class="channel-stats">
-          <div>
-            <span>Converted</span>
-            <strong data-count-up data-value="${Number(source.berkuliah)}">${source.berkuliah}</strong>
-          </div>
-
-          <div>
-            <span>Conv. Rate</span>
-            <strong data-count-up data-value="${Number(source.conversion_rate)}" data-format="percent" data-decimals="2">${formatConversionRate(source.conversion_rate)}%</strong>
-          </div>
+        <div>
+          <span>Deal Proyek</span>
+          <strong style="color:var(--primary);">${source.deal ? source.deal.toLocaleString("id-ID") : "-"}</strong>
+        </div>
+        <div>
+          <span>Conversion Rate</span>
+          <strong>${source.conversion_rate}%</strong>
         </div>
       </div>
-    `;
-  }).join("");
+    </div>
+  `).join("");
 
   app.innerHTML = `
     <section class="page-title">
-      <p>ACQUISITION SOURCES</p>
-      <h1>Channel Performance</h1>
-      <span>${getDateRangeLabel()} engagement and conversion tracking across acquisition sources.</span>
+      <p>DIMENSION3D &bull; MARKETING CHANNELS</p>
+      <h1>Analisis Saluran Akuisisi Klien 3D</h1>
+      <span>Evaluasi performa Google Ads, Instagram Ads, Twitter/Artstation, dan Website Portofolio.</span>
     </section>
 
-    <section class="channel-grid">
-      ${channelCards}
-    </section>
+    <div class="channel-grid">
+      ${cardsHtml}
+    </div>
 
-    <section class="card">
-      <h2>${getChannelTrafficTitle()}</h2>
-      <p class="label">${getDateRangeLabel()} visitor volume across all acquisition channels.</p>
-      <canvas id="monthlyChart"></canvas>
+    <section class="card" style="margin-top: 24px;">
+      <div class="section-header">
+        <div>
+          <h2>Tren Konversi Saluran Iklan</h2>
+          <span>Perbandingan persentase deal proyek 3D antar saluran</span>
+        </div>
+      </div>
+      <canvas id="monthlyChart" style="max-height: 280px;"></canvas>
     </section>
   `;
 
-  renderMonthlyChart();
+  renderChannelChart();
 }
 
-/* ================= FUNNEL DEPTH ================= */
+function renderChannelChart() {
+  const canvas = document.getElementById("monthlyChart");
+  if (!canvas || typeof Chart === "undefined") return;
+
+  const ctx = canvas.getContext("2d");
+  const sources = (appData && appData.sources) || [];
+
+  monthlyChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sources.map(s => s.name),
+      datasets: [
+        {
+          label: "Pengunjung Web 3D",
+          data: sources.map(s => s.pengunjung),
+          backgroundColor: "rgba(37, 99, 235, 0.2)",
+          borderColor: "#2563eb",
+          borderWidth: 2,
+          borderRadius: 6
+        },
+        {
+          label: "Coba Kalkulator Harga",
+          data: sources.map(s => s.kalkulator),
+          backgroundColor: "rgba(99, 102, 241, 0.3)",
+          borderColor: "#6366f1",
+          borderWidth: 2,
+          borderRadius: 6
+        },
+        {
+          label: "Deal Proyek Resmi",
+          data: sources.map(s => s.deal),
+          backgroundColor: "rgba(16, 185, 129, 0.7)",
+          borderColor: "#10b981",
+          borderWidth: 2,
+          borderRadius: 6
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: "#475569" } }
+      },
+      scales: {
+        x: { ticks: { color: "#64748b" }, grid: { color: "rgba(0,0,0,0.05)" } },
+        y: { ticks: { color: "#64748b" }, grid: { color: "rgba(0,0,0,0.05)" } }
+      }
+    }
+  });
+}
+
+/* ================= 4. FUNNEL DEPTH ================= */
 function renderFunnelDepth() {
-  const metrics = getMetricsByRangeAndChannel(currentDateRange, currentChannel);
-  const filteredSources = metrics.sources;
-
-  if (filteredSources.length === 0) {
-    renderEmptyState();
-    return;
-  }
-
-  const stages = getSummaryStages(metrics.summary);
+  const { pengunjung, kalkulator, deal, stages } = get4StageData();
   const highestDrop = getHighestDrop(stages);
+  const convRate = ((deal / pengunjung) * 100).toFixed(2);
 
   app.innerHTML = `
     <section class="page-title">
-      <p>ACQUISITION INTELLIGENCE</p>
-      <h1>Funnel Depth Analysis</h1>
-      <span>Tracking ${getDateRangeLabel().toLowerCase()} prospective student progression from initial website visit to confirmed enrollment.</span>
+      <p>DIMENSION3D &bull; FUNNEL DEPTH</p>
+      <h1>Analisis Kedalaman Corong Konversi 3D</h1>
+      <span>Melacak friksi dari impresi pertama hingga pembayaran uang muka (DP) proyek desain 3D.</span>
     </section>
 
     <section class="dashboard-grid">
       <div class="card">
-        <h2>Conversion Stages</h2>
+        <h2>Tahapan Corong Konversi (4-Stage Depth)</h2>
         <div id="depthFunnel"></div>
       </div>
 
       <aside>
-        <div class="card friction-card">
-          <h2>Registration Friction</h2>
+        <div class="card friction-card" style="margin-bottom: 20px;">
+          <h2>Titik Friksi Utama (Bottleneck)</h2>
           <p>
-            The <strong>${highestDrop.percent.toFixed(1)}% drop</strong>
-            between ${highestDrop.label} indicates friction in the onboarding process.
+            Penurunan sebesar <strong>${highestDrop.percent.toFixed(1)}% drop-off</strong>
+            antara <strong>${highestDrop.label}</strong> merupakan friksi terbesar dalam siklus penjualan jasa 3D studio.
+          </p>
+          <p style="margin-top: 10px; font-size: 0.85rem; color: #475569;">
+            💡 Terapkan SLA respon chat di bawah 15 menit begitu brief masuk dari website.
           </p>
         </div>
 
         <div class="card">
-          <h3>Final Yield</h3>
-          <div class="final-yield" data-count-up data-value="${getTotalConversionRate(metrics)}" data-format="percent" data-decimals="2">${getTotalConversionRate(metrics)}%</div>
-          <p>Overall conversion from visitor to enrolled student.</p>
+          <h3>Final Project Yield</h3>
+          <div class="final-yield" data-count-up data-value="${convRate}" data-format="percent" data-decimals="2">${convRate}%</div>
+          <p>Rasio pengunjung web portofolio 3D yang berhasil dikonversi menjadi klien deal.</p>
           ${getReportExportMarkup()}
         </div>
       </aside>
@@ -2031,98 +827,185 @@ function renderFunnelDepth() {
   renderFunnelBars("depthFunnel", stages);
 }
 
-/* ================= DATA TABLE ================= */
+/* ================= 5. DATA TABLE & LEADS UX LOGS ================= */
 function renderDataTable() {
-  const metrics = getMetricsByRangeAndChannel(currentDateRange, currentChannel);
-  const filteredSources = metrics.sources;
+  const leads = getStoredLeads();
+  const { impresi, pengunjung, kalkulator, deal } = get4StageData();
 
-  if (filteredSources.length === 0) {
-    renderEmptyState();
-    return;
-  }
-
-  const summary = metrics.summary;
-
-  const rows = filteredSources.map(function (source) {
-    return `
-      <tr>   
-        <td>${source.name}</td>
-        <td data-count-up data-value="${Number(source.pengunjung)}">${Number(source.pengunjung).toLocaleString("id-ID")}</td>
-        <td data-count-up data-value="${Number(source.daftar)}">${Number(source.daftar).toLocaleString("id-ID")}</td>
-        <td data-count-up data-value="${Number(source.test)}">${Number(source.test).toLocaleString("id-ID")}</td>
-        <td data-count-up data-value="${Number(source.daftar_ulang)}">${Number(source.daftar_ulang).toLocaleString("id-ID")}</td>
-        <td data-count-up data-value="${Number(source.berkuliah)}">${Number(source.berkuliah).toLocaleString("id-ID")}</td>
-        <td data-count-up data-value="${Number(source.conversion_rate)}" data-format="percent" data-decimals="2">${formatConversionRate(source.conversion_rate)}%</td>
-        <td>${source.status}</td>
-      </tr>
-    `;
-  }).join("");
+  const rows = leads.map((lead, index) => `
+    <tr>
+      <td><strong>${lead.lead_id}</strong></td>
+      <td><strong>${lead.full_name}</strong></td>
+      <td>${lead.service_type}</td>
+      <td style="max-width: 260px; font-size: 0.82rem; color: var(--text-muted);">${lead.specifications}</td>
+      <td><strong style="color:var(--primary); font-size: 0.95rem;">${lead.estimated_price}</strong></td>
+      <td><span class="ads-tag ${lead.utm_source.includes('Google') ? 'tag-google' : 'tag-ig'}">${lead.utm_source}</span></td>
+      <td><span class="badge ${lead.status.includes('Deal') ? 'stable' : 'risk'}">${lead.status}</span></td>
+      <td><small style="color:var(--text-muted);">${lead.created_at ? lead.created_at.slice(0, 16).replace('T', ' ') : '-'}</small></td>
+    </tr>
+  `).join("");
 
   app.innerHTML = `
     <section class="page-title">
-      <p>ANALYTICS DATA</p>
-      <h1>Acquisition Grid</h1>
-      <span>Analyze ${getDateRangeLabel().toLowerCase()} student performance data across primary digital channels.</span>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <p>DIMENSION3D &bull; UX SIMULATOR & CRM</p>
+          <h1>Log Interaksi UX & Leads Masuk (Kalkulator 3D)</h1>
+          <span>Riwayat simulasi estimasi harga jasa 3D oleh calon klien beserta spesifikasi render dan status deal.</span>
+        </div>
+        <button type="button" class="auth-button" style="width: auto; padding: 10px 18px; margin: 0; font-size: 13px;" onclick="openNewLeadModal()">
+          ➕ Tambah Simulasi Lead Baru (Demo Test)
+        </button>
+      </div>
     </section>
 
     <section class="summary">
       <div class="summary-card">
-        <h3>Total Visitors</h3>
-        <p data-count-up data-value="${summary.total_pengunjung}">${summary.total_pengunjung.toLocaleString("id-ID")}</p>
+        <h3>Total Simulasi Tercatat</h3>
+        <p data-count-up data-value="${leads.length}">${leads.length}</p>
       </div>
-
       <div class="summary-card">
-        <h3>Average CVR</h3>
-        <p data-count-up data-value="${getTotalConversionRate(metrics)}" data-format="percent" data-decimals="2">${getTotalConversionRate(metrics)}%</p>
+        <h3>Interaksi Kalkulator</h3>
+        <p data-count-up data-value="${kalkulator}">${kalkulator.toLocaleString("id-ID")}</p>
       </div>
-
       <div class="summary-card">
-        <h3>Active Channels</h3>
-        <p data-count-up data-value="${filteredSources.length}">${filteredSources.length}</p>
+        <h3>Total Deal Proyek</h3>
+        <p data-count-up data-value="${deal}">${deal.toLocaleString("id-ID")}</p>
+      </div>
+      <div class="summary-card">
+        <h3>Rasio Deal</h3>
+        <p>${((deal / (kalkulator || 1)) * 100).toFixed(1)}%</p>
       </div>
     </section>
 
-    <section class="card">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Channel Source</th>
-            <th>Pengunjung</th>
-            <th>Daftar</th>
-            <th>Test</th>
-            <th>Daftar Ulang</th>
-            <th>Berkuliah</th>
-            <th>CVR</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          ${rows}
-
-          <tr class="total-row">
-            <td>TOTAL</td>
-            <td data-count-up data-value="${summary.total_pengunjung}">${summary.total_pengunjung.toLocaleString("id-ID")}</td>
-            <td data-count-up data-value="${summary.total_daftar}">${summary.total_daftar.toLocaleString("id-ID")}</td>
-            <td data-count-up data-value="${summary.total_test}">${summary.total_test.toLocaleString("id-ID")}</td>
-            <td data-count-up data-value="${summary.total_daftar_ulang}">${summary.total_daftar_ulang.toLocaleString("id-ID")}</td>
-            <td data-count-up data-value="${summary.total_berkuliah}">${summary.total_berkuliah.toLocaleString("id-ID")}</td>
-            <td data-count-up data-value="${getTotalConversionRate(metrics)}" data-format="percent" data-decimals="2">${getTotalConversionRate(metrics)}%</td>
-            <td>Overall</td>
-          </tr>
-        </tbody>
-      </table>
+    <section class="card" style="margin-top: 24px;">
+      <div class="section-header">
+        <div>
+          <h2>Tabel Riwayat Leads & Interaksi Kalkulator Harga</h2>
+          <span>Data tersimpan aman di browser (localStorage) & API internal studio</span>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID Lead</th>
+              <th>Nama Klien / Perusahaan</th>
+              <th>Layanan 3D</th>
+              <th>Spesifikasi Proyek</th>
+              <th>Estimasi Harga</th>
+              <th>Sumber Trafik</th>
+              <th>Status Deal</th>
+              <th>Waktu</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
     </section>
   `;
 }
 
-/* ================= FUNNEL BAR ================= */
+/* ================= MODAL TAMBAH SIMULASI LEAD BARU (DEMO TEST) ================= */
+function openNewLeadModal() {
+  const existingModal = document.getElementById("leadModal");
+  if (existingModal) existingModal.remove();
+
+  const modalHtml = `
+    <div id="leadModal" style="position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); padding: 16px;">
+      <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid var(--border); overflow: hidden;">
+        <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700;">➕ Input Simulasi Brief Klien 3D Baru</h3>
+          <button type="button" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);" onclick="closeLeadModal()">✕</button>
+        </div>
+        <form id="newLeadForm" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Nama Klien / Brand</label>
+            <input type="text" id="mClientName" placeholder="Contoh: PT Kreasi Interior Indonesia" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;" />
+          </div>
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Layanan 3D</label>
+            <select id="mServiceType" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;">
+              <option value="3D Architectural Visualization">3D Architectural Visualization (ArchViz)</option>
+              <option value="3D Product Commercial & Animation">3D Product Commercial & Animation</option>
+              <option value="3D Game Asset & Character Rigging">3D Game Asset & Character Rigging</option>
+              <option value="3D Photorealistic Packaging Render">3D Photorealistic Packaging Render</option>
+              <option value="3D Motion Graphics & Visual Effects">3D Motion Graphics & Visual Effects</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Spesifikasi Proyek</label>
+            <input type="text" id="mSpecs" placeholder="Contoh: 4K Render, 3 Angles, Lighting Mood Twilight" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;" />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Estimasi Harga</label>
+              <input type="text" id="mPrice" placeholder="Rp 7.500.000" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;" />
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Sumber Iklan</label>
+              <select id="mSource" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;">
+                <option value="Google Ads">Google Ads</option>
+                <option value="Instagram Ads">Instagram Ads</option>
+                <option value="Twitter/X">Twitter/X</option>
+                <option value="Website SEO">Website SEO</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Status Deal</label>
+            <select id="mStatus" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;">
+              <option value="Request Brief Submitted">Request Brief Submitted</option>
+              <option value="Deal Project (DP 50% Received)">Deal Project (DP 50% Received)</option>
+              <option value="Follow-up Konsultasi WA">Follow-up Konsultasi WA</option>
+              <option value="Kalkulator Cek Harga">Kalkulator Cek Harga</option>
+            </select>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+            <button type="button" onclick="closeLeadModal()" style="padding: 10px 18px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; cursor: pointer; font-weight: 600;">Batal</button>
+            <button type="submit" class="auth-button" style="width: auto; padding: 10px 20px; margin: 0; font-size: 14px;">Simpan Simulasi</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+  document.getElementById("newLeadForm").onsubmit = function (e) {
+    e.preventDefault();
+    const newLead = {
+      lead_id: `3D-LEAD-${new Date().getFullYear()}-${Date.now().toString().slice(-3)}`,
+      full_name: document.getElementById("mClientName").value.trim(),
+      whatsapp: "08" + Math.floor(100000000 + Math.random() * 900000000),
+      email: "client" + Date.now().toString().slice(-4) + "@company.com",
+      service_type: document.getElementById("mServiceType").value,
+      specifications: document.getElementById("mSpecs").value.trim(),
+      estimated_price: document.getElementById("mPrice").value.trim(),
+      utm_source: document.getElementById("mSource").value,
+      created_at: new Date().toISOString().slice(0, 16).replace("T", " "),
+      status: document.getElementById("mStatus").value
+    };
+
+    saveStoredLead(newLead);
+    closeLeadModal();
+    renderDataTable();
+  };
+}
+
+function closeLeadModal() {
+  const modal = document.getElementById("leadModal");
+  if (modal) modal.remove();
+}
+
+/* ================= FUNNEL BARS RENDERER ================= */
 function renderFunnelBars(containerId, stages) {
   const container = document.getElementById(containerId);
   if (!container) return;
   const firstCount = stages[0].count;
 
-  // Deteksi titik kebocoran tertinggi (Highest Drop-off Rate) untuk Core DIP Leak Alert
   let maxDropIdx = -1;
   let maxDropPct = -1;
   for (let i = 1; i < stages.length; i++) {
@@ -2142,22 +1025,20 @@ function renderFunnelBars(containerId, stages) {
     const isLeak = (index === maxDropIdx && maxDropPct > 0);
     let isBocorParah = isLeak;
     let dropPercent = 0;
-
     let dropText = "";
 
     if (index > 0) {
       const previous = stages[index - 1];
-
       if (previous.count > 0) {
         const drop = previous.count - stage.count;
         dropPercent = (drop / previous.count) * 100;
-        if (dropPercent >= 50 || isLeak) {
+        if (dropPercent >= 70 || isLeak) {
           isBocorParah = true;
         }
 
         dropText = `
           <div class="drop${isBocorParah ? ' leak-alert' : ''}">
-            ${isBocorParah ? '<span class="bocor-parah-badge">🚨 BOCOR PARAH</span> ' : ''}<strong>${dropPercent.toFixed(1)}% drop-off</strong> ${isBocorParah ? '(Penurunan Ekstrem Calon Pendaftar)' : ''}
+            ${isBocorParah ? '<span class="bocor-parah-badge">🚨 BOCOR PARAH</span> ' : ''}<strong>${dropPercent.toFixed(1)}% drop-off</strong> ${isBocorParah ? '(Penurunan Ekstrem Calon Klien 3D)' : ''}
           </div>
         `;
       }
@@ -2182,442 +1063,130 @@ function renderFunnelBars(containerId, stages) {
   }).join("");
 }
 
-/* ================= CHART ================= */
-function getSmoothChartOptions() {
-  return {
-    responsive: true,
-    animation: {
-      duration: 1200,
-      easing: "easeOutQuart"
-    },
-    transitions: {
-      active: {
-        animation: {
-          duration: 400
-        }
-      },
-      resize: {
-        animation: {
-          duration: 600
-        }
-      },
-      show: {
-        animations: {
-          x: {
-            from: 0,
-            duration: 900,
-            easing: "easeOutQuart"
-          },
-          y: {
-            from: 0,
-            duration: 900,
-            easing: "easeOutQuart"
-          }
-        }
-      },
-      hide: {
-        animation: {
-          duration: 300
-        }
-      }
-    },
-    hover: {
-      mode: "nearest",
-      intersect: true,
-      animationDuration: 250
-    },
-    plugins: {
-      legend: {
-        labels: {
-          color: "#475569"
-        }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: "#64748b" },
-        grid: { color: "rgba(0,0,0,0.06)" }
-      },
-      y: {
-        beginAtZero: true,
-        ticks: { color: "#64748b" },
-        grid: { color: "rgba(0,0,0,0.06)" }
-      }
-    }
-  };
-}
-
-function renderMonthlyChart() {
-  if (typeof Chart === "undefined") {
-    const chart = document.getElementById("monthlyChart");
-
-    if (chart) {
-      const chartMessage = document.createElement("div");
-      chartMessage.className = "empty-state";
-      chartMessage.innerHTML = `
-        <h2>Grafik belum tersedia</h2>
-        <p>Chart.js gagal dimuat. Data channel tetap bisa dibaca.</p>
-      `;
-
-      chart.replaceWith(chartMessage);
-    }
-
-    return;
-  }
-
-  const monthlyData = getChartDataByDateRange();
-
-  const labels = monthlyData.map(item => item.month);
-  const googleAds = monthlyData.map(item => item.google_ads);
-  const instagram = monthlyData.map(item => item.instagram);
-  const twitterX = monthlyData.map(item => item.twitter_x);
-  const website = monthlyData.map(item => item.website);
-
-  const ctx = document.getElementById("monthlyChart").getContext("2d");
-
-  if (monthlyChart) {
-    monthlyChart.destroy();
-    monthlyChart = null;
-  }
-
-  monthlyChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: "Google Ads",
-          data: googleAds,
-          backgroundColor: "rgba(37, 99, 235, 0.85)",
-          hoverBackgroundColor: "rgba(29, 78, 216, 0.95)",
-          hoverBorderColor: "#bfdbfe",
-          hoverBorderWidth: 2
-        },
-        {
-          label: "Instagram",
-          data: instagram,
-          backgroundColor: "rgba(2, 132, 199, 0.85)",
-          hoverBackgroundColor: "rgba(3, 105, 161, 0.95)",
-          hoverBorderColor: "#bae6fd",
-          hoverBorderWidth: 2
-        },
-        {
-          label: "Twitter/X",
-          data: twitterX,
-          backgroundColor: "rgba(99, 102, 241, 0.85)",
-          hoverBackgroundColor: "rgba(79, 70, 229, 0.95)",
-          hoverBorderColor: "#c7d2fe",
-          hoverBorderWidth: 2
-        },
-        {
-          label: "Website",
-          data: website,
-          backgroundColor: "rgba(16, 185, 129, 0.85)",
-          hoverBackgroundColor: "rgba(5, 150, 105, 0.95)",
-          hoverBorderColor: "#a7f3d0",
-          hoverBorderWidth: 2
-        }
-      ]
-    },
-    options: getSmoothChartOptions()
+/* ================= ANIMATION & EXPORT HELPERS ================= */
+function runDashboardAnimations() {
+  const bars = document.querySelectorAll(".bar-fill");
+  bars.forEach(function (bar) {
+    const targetWidth = bar.dataset.width || "0";
+    setTimeout(function () {
+      bar.style.width = targetWidth + "%";
+    }, 120);
   });
 }
 
-/* ================= DOWNLOAD REPORT ================= */
-function getReportFileName(extension) {
-  const period = getDateRangeLabel().toLowerCase().replace(/\s+/g, "-");
-  const channel = (currentChannel === "all" ? "all-channels" : currentChannel)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  return `edufunnel-report-${period}-${channel}.${extension}`;
-}
-
-function getCurrentReportData() {
-  if (!appData) {
-    return null;
-  }
-
-  const summary = getFilteredSummary();
-  const funnelData = getSummaryStages();
-  const sources = getFilteredSources();
-  const highestDrop = getHighestDrop(funnelData);
-  const bestSource = sources.length > 0
-    ? [...sources].sort(function (a, b) {
-      return Number(b.conversion_rate) - Number(a.conversion_rate);
-    })[0]
-    : null;
-
-  return {
-    title: "EduFunnel Detailed Report",
-    metadata: appData.metadata || {},
-    selectedPeriod: getDateRangeLabel(),
-    selectedChannel: currentChannel === "all" ? "All Channels" : currentChannel,
-    selectedPeriodValue: currentDateRange,
-    summary: summary,
-    funnelData: funnelData,
-    sources: sources,
-    chartData: getChartDataByDateRange(),
-    highestDrop: highestDrop,
-    bestSource: bestSource,
-    generatedAt: new Date().toLocaleString("id-ID")
-  };
-}
-
-function downloadBlob(content, filename, type) {
-  const blob = new Blob([content], { type: type });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = filename;
-  link.click();
-
-  URL.revokeObjectURL(url);
-}
-
-function downloadJSONReport() {
-  const reportData = getCurrentReportData();
-
-  if (!reportData) {
-    alert("Data belum siap.");
-    return;
-  }
-
-  const jsonData = JSON.stringify(reportData, null, 2);
-  downloadBlob(jsonData, getReportFileName("json"), "application/json");
-}
-
-function escapeCSVValue(value) {
-  const text = String(value ?? "");
-
-  if (/[",\n]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-
-  return text;
-}
-
-function addCSVRow(rows, values) {
-  rows.push(values.map(escapeCSVValue).join(","));
-}
-
-function downloadCSVReport() {
-  const reportData = getCurrentReportData();
-
-  if (!reportData) {
-    alert("Data belum siap.");
-    return;
-  }
-
-  const rows = [];
-
-  addCSVRow(rows, ["EduFunnel Detailed Report"]);
-  addCSVRow(rows, ["Generated At", reportData.generatedAt]);
-  addCSVRow(rows, ["Period", reportData.selectedPeriod]);
-  addCSVRow(rows, ["Channel", reportData.selectedChannel]);
-  rows.push("");
-
-  addCSVRow(rows, ["Summary"]);
-  addCSVRow(rows, ["Metric", "Value"]);
-  addCSVRow(rows, ["Total Visitors", reportData.summary.total_pengunjung]);
-  addCSVRow(rows, ["Qualified Leads", reportData.summary.total_daftar]);
-  addCSVRow(rows, ["Conversion Rate", `${getTotalConversionRate()}%`]);
-  rows.push("");
-
-  addCSVRow(rows, ["Funnel Data"]);
-  addCSVRow(rows, ["Stage", "Value"]);
-  reportData.funnelData.forEach(function (stage) {
-    addCSVRow(rows, [stage.label, stage.count]);
-  });
-  rows.push("");
-
-  addCSVRow(rows, ["Channel Data"]);
-  addCSVRow(rows, [
-    "Channel Source",
-    "Pengunjung",
-    "Daftar",
-    "Test",
-    "Daftar Ulang",
-    "Berkuliah",
-    "CVR",
-    "Status"
-  ]);
-
-  reportData.sources.forEach(function (source) {
-    addCSVRow(rows, [
-      source.name,
-      source.pengunjung,
-      source.daftar,
-      source.test,
-      source.daftar_ulang,
-      source.berkuliah,
-      `${formatConversionRate(source.conversion_rate)}%`,
-      source.status
-    ]);
-  });
-
-  downloadBlob(rows.join("\n"), getReportFileName("csv"), "text/csv;charset=utf-8");
-}
-
-function addPDFLine(doc, label, value, x, y) {
-  doc.text(`${label}: ${value}`, x, y);
-}
-
-function downloadPDFReport() {
-  const reportData = getCurrentReportData();
-
-  if (!reportData) {
-    alert("Data belum siap.");
-    return;
-  }
-
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    alert("Library PDF belum siap. Coba refresh halaman.");
-    return;
-  }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const left = 14;
-  let y = 18;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("EduFunnel Detailed Report", left, y);
-
-  y += 10;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  addPDFLine(doc, "Generated At", reportData.generatedAt, left, y);
-  y += 6;
-  addPDFLine(doc, "Period", reportData.selectedPeriod, left, y);
-  y += 6;
-  addPDFLine(doc, "Channel", reportData.selectedChannel, left, y);
-
-  y += 12;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Summary Metrics", left, y);
-
-  y += 8;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  addPDFLine(doc, "Total Visitors", reportData.summary.total_pengunjung.toLocaleString("id-ID"), left, y);
-  y += 6;
-  addPDFLine(doc, "Qualified Leads", reportData.summary.total_daftar.toLocaleString("id-ID"), left, y);
-  y += 6;
-  addPDFLine(doc, "Conversion Rate", `${getTotalConversionRate()}%`, left, y);
-
-  y += 12;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Funnel Stages", left, y);
-
-  y += 8;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  reportData.funnelData.forEach(function (stage) {
-    addPDFLine(doc, stage.label, stage.count.toLocaleString("id-ID"), left, y);
-    y += 6;
-  });
-
-  y += 6;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Insights", left, y);
-
-  y += 8;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  addPDFLine(doc, "Highest Drop-off", `${reportData.highestDrop.percent.toFixed(1)}% (${reportData.highestDrop.label})`, left, y);
-  y += 6;
-  addPDFLine(doc, "Users Lost", reportData.highestDrop.value.toLocaleString("id-ID"), left, y);
-  y += 6;
-  addPDFLine(
-    doc,
-    "Best Channel",
-    reportData.bestSource
-      ? `${reportData.bestSource.name} (${formatConversionRate(reportData.bestSource.conversion_rate)}%)`
-      : "-",
-    left,
-    y
-  );
-
-  if (monthlyChart) {
-    try {
-      const chartImage = monthlyChart.toBase64Image();
-      y += 12;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.text("Chart Snapshot", left, y);
-      y += 5;
-      doc.addImage(chartImage, "PNG", left, y, 180, 80);
-    } catch (error) {
-      console.warn("Chart image tidak bisa ditambahkan ke PDF:", error);
-    }
-  }
-
-  doc.save(getReportFileName("pdf"));
+function getReportExportMarkup() {
+  return `
+    <div class="export-dropdown-wrapper" style="margin-top: 18px;">
+      <button type="button" class="export-btn" id="exportBtn" style="width: 100%; justify-content: center;">
+        📥 Export Studio Report &darr;
+      </button>
+      <div class="export-menu" id="exportMenu" hidden style="background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); margin-top:6px; overflow:hidden;">
+        <button type="button" class="export-item" data-export-type="pdf" style="display:block; width:100%; padding:10px 14px; text-align:left; background:none; border:none; cursor:pointer;">📄 Unduh PDF Report</button>
+        <button type="button" class="export-item" data-export-type="csv" style="display:block; width:100%; padding:10px 14px; text-align:left; background:none; border:none; cursor:pointer;">📊 Unduh Spreadsheet (CSV)</button>
+        <button type="button" class="export-item" data-export-type="json" style="display:block; width:100%; padding:10px 14px; text-align:left; background:none; border:none; cursor:pointer;">💾 Unduh Raw Data (JSON)</button>
+      </div>
+    </div>
+  `;
 }
 
 function setupReportExport() {
-  document.querySelectorAll("[data-report-toggle]").forEach(function (toggle) {
-    toggle.onclick = function () {
-      const exportMenu = toggle.closest(".report-export").querySelector(".export-menu");
-      exportMenu.hidden = !exportMenu.hidden;
-    };
+  const exportBtn = document.getElementById("exportBtn");
+  const exportMenu = document.getElementById("exportMenu");
+  if (!exportBtn || !exportMenu) return;
+
+  exportBtn.onclick = function (e) {
+    e.stopPropagation();
+    exportMenu.hidden = !exportMenu.hidden;
+  };
+
+  document.addEventListener("click", function () {
+    if (exportMenu) exportMenu.hidden = true;
   });
 
-  document.querySelectorAll("[data-export-type]").forEach(function (button) {
-    button.onclick = function () {
-      const exportMenu = button.closest(".export-menu");
-      const exportType = button.dataset.exportType;
-
+  const items = document.querySelectorAll(".export-item");
+  items.forEach(function (btn) {
+    btn.onclick = function (e) {
+      e.stopPropagation();
       exportMenu.hidden = true;
-
-      if (exportType === "pdf") downloadPDFReport();
-      if (exportType === "csv") downloadCSVReport();
-      if (exportType === "json") downloadJSONReport();
+      const type = btn.dataset.exportType;
+      if (type === "json") downloadJSONReport();
+      if (type === "csv") downloadCSVReport();
+      if (type === "pdf") downloadPDFReport();
     };
   });
 }
 
-function downloadReport() {
-  downloadJSONReport();
+function downloadJSONReport() {
+  const { stages } = get4StageData();
+  const data = {
+    studio: "Dimension3D Studio Analytics",
+    exported_at: new Date().toISOString(),
+    funnel: stages,
+    leads: getStoredLeads()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Dimension3D-Report-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
 }
 
-// Expose showDashboardPage globally for onclick handlers in index.html
+function downloadCSVReport() {
+  const { stages } = get4StageData();
+  let csv = "Stage,Count\n";
+  stages.forEach(s => {
+    csv += `"${s.label}",${s.count}\n`;
+  });
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Dimension3D-Funnel-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+}
+
+function downloadPDFReport() {
+  if (typeof window.jspdf === "undefined") {
+    alert("jsPDF library sedang dimuat. Silakan unduh CSV atau JSON.");
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const { stages } = get4StageData();
+
+  doc.setFontSize(16);
+  doc.text("Dimension3D Studio - Funnel Performance Report", 14, 20);
+  doc.setFontSize(10);
+  doc.text(`Tanggal Export: ${new Date().toLocaleString("id-ID")}`, 14, 28);
+  doc.text("4-Stage Funnel Breakdown:", 14, 38);
+
+  let y = 48;
+  stages.forEach(s => {
+    doc.text(`- ${s.label}: ${s.count.toLocaleString("id-ID")}`, 18, y);
+    y += 8;
+  });
+
+  doc.save(`Dimension3D-Report-${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+// Global exposure for onclick handlers in index.html
 window.showDashboardPage = showDashboardPage;
 window.showLoginPage = showLoginPage;
 window.showRegisterPage = showRegisterPage;
+window.openNewLeadModal = openNewLeadModal;
+window.closeLeadModal = closeLeadModal;
 
-/* ================= INIT ================= */
-window.addEventListener("load", async function () {
-  // 1. Cek sesi lokal (localStorage)
+/* ================= INIT ON LOAD ================= */
+window.addEventListener("load", function () {
   const storedUser = getStoredSessionUser();
   if (storedUser) {
     showDashboardPage();
     return;
   }
-
-  // 2. Cek apakah ada parameter hash #dashboard
   if (window.location.hash === "#dashboard") {
     showDashboardPage();
     return;
   }
-
-  // 3. Fallback Supabase jika tersedia
-  try {
-    const user = await getCurrentSupabaseUser();
-    if (user) {
-      showDashboardPage();
-      return;
-    }
-  } catch (error) {
-    // Abaikan error Supabase
-  }
-
-  showRegisterPage();
+  showLoginPage();
 });

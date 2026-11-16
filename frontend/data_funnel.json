@@ -1,480 +1,152 @@
 {
   "metadata": {
-    "project_name": "EduFunnel",
-    "period": "2025",
-    "generated_by": "Frontend Dashboard System"
+    "project_name": "Dimension3D Studio Funnel Analytics",
+    "period": "2026",
+    "business_type": "3D Design & Commercial CGI Studio",
+    "generated_by": "Internal Studio Analytics Engine"
   },
   "summary": {
-    "total_pengunjung": 1000,
-    "total_daftar": 415,
-    "total_test": 208,
-    "total_daftar_ulang": 104,
-    "total_berkuliah": 51
+    "total_impresi": 190000,
+    "total_pengunjung": 24200,
+    "total_kalkulator": 4780,
+    "total_deal": 560
   },
   "metric_cards": [
     {
-      "title": "Total Pengunjung",
-      "value": 1000
+      "title": "Total Pengunjung Web 3D",
+      "value": 24200
     },
     {
-      "title": "Total Berkuliah",
-      "value": 51
+      "title": "Interaksi Kalkulator",
+      "value": 4780
     },
     {
-      "title": "Conversion Rate",
-      "value": 5.1
+      "title": "Request Brief & Deal",
+      "value": 560
+    },
+    {
+      "title": "Conversion Rate (Web ke Deal)",
+      "value": 2.31
     }
   ],
   "funnel_stages": [
-    "Pengunjung",
-    "Daftar",
-    "Test",
-    "Daftar Ulang",
-    "Berkuliah"
+    "1. Impresi Iklan (IG/Google Ads)",
+    "2. Pengunjung Web 3D",
+    "3. Interaksi Kalkulator Harga",
+    "4. Request Brief / Deal Proyek"
   ],
   "funnel_data": [
-    1000,
-    415,
-    208,
-    104,
-    51
-  ],
-  "daily_channel_traffic": [
-    {
-      "date": "2025-12-25",
-      "channel": "Google Ads",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 1,
-      "daftar_ulang": 0,
-      "berkuliah": 1
-    },
-    {
-      "date": "2025-12-25",
-      "channel": "Instagram",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-25",
-      "channel": "Twitter/X",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-25",
-      "channel": "Website",
-      "pengunjung": 0,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-26",
-      "channel": "Google Ads",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-26",
-      "channel": "Instagram",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-26",
-      "channel": "Twitter/X",
-      "pengunjung": 0,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-26",
-      "channel": "Website",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-27",
-      "channel": "Google Ads",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-27",
-      "channel": "Instagram",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-27",
-      "channel": "Twitter/X",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 1,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-27",
-      "channel": "Website",
-      "pengunjung": 0,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-28",
-      "channel": "Google Ads",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 1,
-      "daftar_ulang": 1,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-28",
-      "channel": "Instagram",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 1,
-      "daftar_ulang": 1,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-28",
-      "channel": "Twitter/X",
-      "pengunjung": 0,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-28",
-      "channel": "Website",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-29",
-      "channel": "Google Ads",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-29",
-      "channel": "Instagram",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-29",
-      "channel": "Twitter/X",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-29",
-      "channel": "Website",
-      "pengunjung": 0,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-30",
-      "channel": "Google Ads",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-30",
-      "channel": "Instagram",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-30",
-      "channel": "Twitter/X",
-      "pengunjung": 0,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-30",
-      "channel": "Website",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-31",
-      "channel": "Google Ads",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-31",
-      "channel": "Instagram",
-      "pengunjung": 0,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-31",
-      "channel": "Twitter/X",
-      "pengunjung": 1,
-      "daftar": 1,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    },
-    {
-      "date": "2025-12-31",
-      "channel": "Website",
-      "pengunjung": 1,
-      "daftar": 0,
-      "test": 0,
-      "daftar_ulang": 0,
-      "berkuliah": 0
-    }
+    190000,
+    24200,
+    4780,
+    560
   ],
   "sources": [
     {
       "name": "Google Ads",
-      "pengunjung": 256,
-      "daftar": 103,
-      "test": 52,
-      "daftar_ulang": 26,
-      "berkuliah": 14,
-      "conversion_rate": 5.47,
-      "drop_off": 94.53,
-      "progression_rates": {
-        "pengunjung_to_daftar": 40.2,
-        "daftar_to_test": 50.5,
-        "test_to_daftar_ulang": 50.0,
-        "daftar_ulang_to_berkuliah": 53.8
-      },
-      "attrition_rates": {
-        "pengunjung_to_daftar": 59.8,
-        "daftar_to_test": 49.5,
-        "test_to_daftar_ulang": 50.0,
-        "daftar_ulang_to_berkuliah": 46.2
-      },
-      "ranking": 1,
-      "status": "Top"
+      "channel_full": "Google Ads (High Intent B2B Search)",
+      "impresi": 62000,
+      "pengunjung": 8400,
+      "kalkulator": 2030,
+      "deal": 275,
+      "conversion_rate": 3.27,
+      "status": "Stable (Tinggi)",
+      "badge_class": "stable"
     },
     {
       "name": "Instagram",
-      "pengunjung": 266,
-      "daftar": 111,
-      "test": 55,
-      "daftar_ulang": 28,
-      "berkuliah": 14,
-      "conversion_rate": 5.26,
-      "drop_off": 94.74,
-      "progression_rates": {
-        "pengunjung_to_daftar": 41.7,
-        "daftar_to_test": 49.5,
-        "test_to_daftar_ulang": 50.9,
-        "daftar_ulang_to_berkuliah": 50.0
-      },
-      "attrition_rates": {
-        "pengunjung_to_daftar": 58.3,
-        "daftar_to_test": 50.5,
-        "test_to_daftar_ulang": 49.1,
-        "daftar_ulang_to_berkuliah": 50.0
-      },
-      "ranking": 2,
-      "status": "Stable"
+      "channel_full": "Instagram Ads (Reels & Visual 3D Showcase)",
+      "impresi": 88000,
+      "pengunjung": 9800,
+      "kalkulator": 1620,
+      "deal": 145,
+      "conversion_rate": 1.48,
+      "status": "Alert (Drop-off Tinggi)",
+      "badge_class": "risk"
     },
     {
       "name": "Twitter/X",
-      "pengunjung": 227,
-      "daftar": 94,
-      "test": 47,
-      "daftar_ulang": 23,
-      "berkuliah": 10,
-      "conversion_rate": 4.41,
-      "drop_off": 95.59,
-      "progression_rates": {
-        "pengunjung_to_daftar": 41.4,
-        "daftar_to_test": 50.0,
-        "test_to_daftar_ulang": 48.9,
-        "daftar_ulang_to_berkuliah": 43.5
-      },
-      "attrition_rates": {
-        "pengunjung_to_daftar": 58.6,
-        "daftar_to_test": 50.0,
-        "test_to_daftar_ulang": 51.1,
-        "daftar_ulang_to_berkuliah": 56.5
-      },
-      "ranking": 4,
-      "status": "Alert"
+      "channel_full": "Twitter/X & Artstation Showcase",
+      "impresi": 25000,
+      "pengunjung": 2800,
+      "kalkulator": 450,
+      "deal": 48,
+      "conversion_rate": 1.71,
+      "status": "Stable",
+      "badge_class": "stable"
     },
     {
       "name": "Website",
-      "pengunjung": 251,
-      "daftar": 107,
-      "test": 54,
-      "daftar_ulang": 27,
-      "berkuliah": 13,
-      "conversion_rate": 5.18,
-      "drop_off": 94.82,
-      "progression_rates": {
-        "pengunjung_to_daftar": 42.6,
-        "daftar_to_test": 50.5,
-        "test_to_daftar_ulang": 50.0,
-        "daftar_ulang_to_berkuliah": 48.1
-      },
-      "attrition_rates": {
-        "pengunjung_to_daftar": 57.4,
-        "daftar_to_test": 49.5,
-        "test_to_daftar_ulang": 50.0,
-        "daftar_ulang_to_berkuliah": 51.9
-      },
-      "ranking": 3,
-      "status": "Stable"
+      "channel_full": "Website Portofolio Organik (SEO Direct)",
+      "impresi": 15000,
+      "pengunjung": 3200,
+      "kalkulator": 680,
+      "deal": 92,
+      "conversion_rate": 2.88,
+      "status": "Stable",
+      "badge_class": "stable"
     }
   ],
-  "monthly_channel_traffic": [
+  "recent_ux_logs": [
     {
-      "month": "Jan",
-      "google_ads": 19,
-      "instagram": 18,
-      "twitter_x": 23,
-      "website": 18
+      "lead_id": "3D-LEAD-2026-001",
+      "full_name": "Reza Pratama (PT Mahakarya Arsitektur)",
+      "whatsapp": "081234567890",
+      "email": "reza.pratama@mahakarya-arch.id",
+      "service_type": "3D Architectural Visualization",
+      "specifications": "4K Exterior Render (3 Angle) + Twilight Lighting Mood",
+      "estimated_price": "Rp 6.500.000",
+      "utm_source": "Instagram Ads (Reels Portfolio)",
+      "created_at": "2026-11-16 19:45",
+      "status": "Deal Project (DP 50% Received)"
     },
     {
-      "month": "Feb",
-      "google_ads": 25,
-      "instagram": 22,
-      "twitter_x": 23,
-      "website": 20
+      "lead_id": "3D-LEAD-2026-002",
+      "full_name": "Clarissa Dewi (Brand Manager Lumina Cosmetic)",
+      "whatsapp": "081987654321",
+      "email": "clarissa@luminacosmetics.com",
+      "service_type": "3D Product Commercial & Animation",
+      "specifications": "360 Spin + Exploded View 60fps (Blender/Cycles 4K)",
+      "estimated_price": "Rp 12.000.000",
+      "utm_source": "Google Ads (High Intent Search)",
+      "created_at": "2026-11-16 16:30",
+      "status": "Request Brief Submitted"
     },
     {
-      "month": "Mar",
-      "google_ads": 14,
-      "instagram": 16,
-      "twitter_x": 14,
-      "website": 16
+      "lead_id": "3D-LEAD-2026-003",
+      "full_name": "Bayu Wicaksono (IndoPlay Games Studio)",
+      "whatsapp": "081377889900",
+      "email": "bayu@indoplaygames.co.id",
+      "service_type": "3D Game Asset & Character Rigging",
+      "specifications": "Low-poly PBR Game Ready Character + Unreal Engine Rig",
+      "estimated_price": "Rp 7.800.000",
+      "utm_source": "Google Ads (High Intent Search)",
+      "created_at": "2026-11-16 11:20",
+      "status": "Follow-up Konsultasi WA"
     },
     {
-      "month": "Apr",
-      "google_ads": 18,
-      "instagram": 23,
-      "twitter_x": 21,
-      "website": 29
+      "lead_id": "3D-LEAD-2026-004",
+      "full_name": "Fajar Nugraha (F&B Creative Agency)",
+      "whatsapp": "081299887766",
+      "email": "fajar@kreatifagency.id",
+      "service_type": "3D Photorealistic Packaging Render",
+      "specifications": "8K Packaging Packshot (Can & Box) + Splash Simulation",
+      "estimated_price": "Rp 4.200.000",
+      "utm_source": "Instagram Ads (Reels Portfolio)",
+      "created_at": "2026-11-15 14:15",
+      "status": "Kalkulator Cek Harga"
     },
     {
-      "month": "May",
-      "google_ads": 29,
-      "instagram": 23,
-      "twitter_x": 24,
-      "website": 20
-    },
-    {
-      "month": "Jun",
-      "google_ads": 29,
-      "instagram": 13,
-      "twitter_x": 15,
-      "website": 27
-    },
-    {
-      "month": "Jul",
-      "google_ads": 12,
-      "instagram": 25,
-      "twitter_x": 17,
-      "website": 21
-    },
-    {
-      "month": "Aug",
-      "google_ads": 24,
-      "instagram": 26,
-      "twitter_x": 23,
-      "website": 31
-    },
-    {
-      "month": "Sep",
-      "google_ads": 19,
-      "instagram": 27,
-      "twitter_x": 15,
-      "website": 21
-    },
-    {
-      "month": "Oct",
-      "google_ads": 24,
-      "instagram": 26,
-      "twitter_x": 15,
-      "website": 14
-    },
-    {
-      "month": "Nov",
-      "google_ads": 15,
-      "instagram": 21,
-      "twitter_x": 21,
-      "website": 15
-    },
-    {
-      "month": "Dec",
-      "google_ads": 28,
-      "instagram": 26,
-      "twitter_x": 16,
-      "website": 19
+      "lead_id": "3D-LEAD-2026-005",
+      "full_name": "Hendra Wijaya (Property Developer Bali)",
+      "whatsapp": "081800112233",
+      "email": "hendra@balivilladeveloper.com",
+      "service_type": "3D Architectural Visualization",
+      "specifications": "Villa Complex 3D Walkthrough Animation (60s 1080p)",
+      "estimated_price": "Rp 18.500.000",
+      "utm_source": "Google Ads (High Intent Search)",
+      "created_at": "2026-11-15 09:30",
+      "status": "Deal Project (DP 50% Received)"
     }
   ]
 }

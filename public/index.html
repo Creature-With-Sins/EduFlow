@@ -4,20 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Dashboard Klien (Pak Hendra) - EduFlow Agency</title>
+  <title>Dimension3D Studio &bull; Internal Funnel Analytics & Deal Tracker</title>
 
   <!-- Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Supabase client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Chart.js -->
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 
-  <!-- jsPDF -->
+  <!-- jsPDF CDN -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 
   <!-- Unified Light CSS -->
@@ -27,30 +24,29 @@
 <body>
   <!-- ================= AUTH: REGISTER PAGE ================= -->
   <section id="registerPage" class="auth-page">
-    <!-- Auth Navigation Header (Identik dengan Home Nav) -->
     <header class="auth-nav-header">
-      <a href="home.html" class="home-brand">
-        <div class="home-brand-logo">EF</div>
-        <div class="home-brand-text">Edu<span>Flow</span> Agency</div>
-      </a>
-      <a href="home.html" class="header-home-btn">
-        <span>🏠</span>
-        <span>Kembali ke Home Screen</span>
-      </a>
+      <div class="home-brand">
+        <div class="home-brand-logo">3D</div>
+        <div class="home-brand-text">Dimension<span>3D</span> Studio</div>
+      </div>
+      <div style="font-size: 13px; color: var(--text-muted); background: var(--bg-card); padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
+        <span>Sistem Internal Monitoring Funnel Bisnis 3D</span>
+      </div>
     </header>
 
     <div class="auth-wrapper">
       <div class="auth-card">
-        <div class="auth-icon">EF</div>
-        <h1>Registrasi Klien</h1>
-        <p>Buat akun institusi Anda untuk mulai memantau corong admisi</p>
+        <div class="auth-icon">3D</div>
+        <h1>Registrasi Akses Studio 3D</h1>
+        <p>Buat akun pengelola untuk memantau performa iklan, simulasi kalkulator harga, dan konversi brief proyek 3D.</p>
 
         <form id="registerForm">
-          <label for="registerName">Nama Lengkap</label>
-          <input type="text" id="registerName" placeholder="Contoh: Pak Hendra" required />
+          <label for="registerName">Nama Lengkap / Lead 3D Artist</label>
+          <input type="text" id="registerName" placeholder="Contoh: Alex Pratama" required />
 
-          <label for="registerEmail">Email Lembaga / Kampus</label>
-          <input type="email" id="registerEmail" placeholder="hendra@skillsnusantara.ac.id" required />
+          <label for="registerEmail">Email Studio / Bisnis 3D</label>
+          <input type="email" id="registerEmail" placeholder="owner@dimension3d.studio" required />
 
           <label for="registerPassword">Password</label>
           <input type="password" id="registerPassword" placeholder="********" required />
@@ -58,81 +54,80 @@
           <label for="confirmPassword">Konfirmasi Password</label>
           <input type="password" id="confirmPassword" placeholder="********" required />
 
-          <button type="submit" class="auth-button">Daftar Akun Baru</button>
-          <button type="button" class="demo-login-btn" onclick="showDashboardPage()">⚡ Mode Demo: Langsung Buka Dashboard Pak Hendra</button>
+          <button type="submit" class="auth-button">Daftar Akun Studio 3D</button>
+          <button type="button" class="demo-login-btn" onclick="showDashboardPage()">⚡ Mode Demo: Langsung Buka Dashboard Studio 3D</button>
         </form>
 
         <p class="auth-link">
-          Sudah memiliki akun?
+          Sudah memiliki akun studio?
           <button id="goToLogin" type="button">Masuk ke Dashboard</button>
         </p>
       </div>
     </div>
 
-    <div class="auth-footer">&copy; 2026 EduFlow Agency &bull; Akademi Skill Nusantara</div>
+    <div class="auth-footer">&copy; 2026 Dimension3D Studio &bull; 3D Design & Commercial CGI Analytics</div>
   </section>
 
   <!-- ================= AUTH: LOGIN PAGE ================= -->
   <section id="loginPage" class="auth-page hidden">
-    <!-- Auth Navigation Header (Identik dengan Home Nav) -->
     <header class="auth-nav-header">
-      <a href="home.html" class="home-brand">
-        <div class="home-brand-logo">EF</div>
-        <div class="home-brand-text">Edu<span>Flow</span> Agency</div>
-      </a>
-      <a href="home.html" class="header-home-btn">
-        <span>🏠</span>
-        <span>Kembali ke Home Screen</span>
-      </a>
+      <div class="home-brand">
+        <div class="home-brand-logo">3D</div>
+        <div class="home-brand-text">Dimension<span>3D</span> Studio</div>
+      </div>
+      <div style="font-size: 13px; color: var(--text-muted); background: var(--bg-card); padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block;"></span>
+        <span>Sistem Internal Monitoring Funnel Bisnis 3D</span>
+      </div>
     </header>
 
     <div class="auth-wrapper">
       <div class="auth-card">
-        <div class="auth-icon">EF</div>
+        <div class="auth-icon">3D</div>
 
-        <h1>Selamat Datang</h1>
-        <p>Masukkan kredensial Anda untuk mengakses dashboard analitik</p>
+        <h1>Dimension3D Internal Portal</h1>
+        <p>Masuk untuk menganalisis data drop-off corong iklan, interaksi kalkulator harga, dan deal klien 3D.</p>
 
         <form id="loginForm">
-          <label for="loginEmail">Alamat Email Lembaga</label>
-          <input type="email" id="loginEmail" placeholder="hendra@skillsnusantara.ac.id" required />
+          <label for="loginEmail">Email Studio / Akun Terdaftar</label>
+          <input type="email" id="loginEmail" placeholder="owner@dimension3d.studio" required />
 
           <label for="loginPassword">Password</label>
           <input type="password" id="loginPassword" placeholder="********" required />
 
-          <button type="submit" class="auth-button">Masuk ke Dashboard &rarr;</button>
-          <button type="button" class="demo-login-btn" onclick="showDashboardPage()">⚡ Mode Demo: Masuk Sebagai Pak Hendra</button>
+          <button type="submit" class="auth-button">Masuk ke Dashboard Studio &rarr;</button>
+          <button type="button" class="demo-login-btn" onclick="showDashboardPage()">⚡ Mode Demo: Masuk Sebagai Lead 3D Artist</button>
         </form>
 
         <p class="auth-link">
-          Belum memiliki akun?
+          Belum memiliki akun studio?
           <button id="goToRegister" type="button">Buat akun baru</button>
         </p>
       </div>
     </div>
 
-    <div class="auth-footer">&copy; 2026 EduFlow Agency &bull; Akademi Skill Nusantara</div>
+    <div class="auth-footer">&copy; 2026 Dimension3D Studio &bull; 3D Design & Commercial CGI Analytics</div>
   </section>
 
-  <!-- ================= DASHBOARD PAGE (SISI KLIEN: PAK HENDRA) ================= -->
+  <!-- ================= DASHBOARD PAGE (INTERNAL STUDIO 3D) ================= -->
   <section id="dashboardPage" class="dashboard-page hidden">
     <!-- Sidebar Kiri Bersih Minimalis -->
     <aside class="sidebar">
       <div class="sidebar-main">
         <div class="brand">
-          <div class="logo">EF</div>
+          <div class="logo">3D</div>
           <div>
-            <h2>EduFlow</h2>
-            <p>Akademi Skill Nusantara</p>
+            <h2>Dimension3D</h2>
+            <p>Studio Funnel Suite</p>
           </div>
         </div>
 
         <nav class="menu">
-          <button type="button" class="menu-item active" data-page="overview">📊 Overview</button>
-          <button type="button" class="menu-item" data-page="leak_analytics">🔥 Leak Alert & Ads (DIP)</button>
-          <button type="button" class="menu-item" data-page="channel">🌐 Channel Analysis</button>
-          <button type="button" class="menu-item" data-page="funnel">📈 Funnel Depth</button>
-          <button type="button" class="menu-item" data-page="table">📋 Data Tables & Leads</button>
+          <button type="button" class="menu-item active" data-page="overview">📊 Overview Studio</button>
+          <button type="button" class="menu-item" data-page="leak_analytics">🔥 Leak Alert & Ads Iklan</button>
+          <button type="button" class="menu-item" data-page="channel">🌐 Analisis Saluran Iklan</button>
+          <button type="button" class="menu-item" data-page="funnel">📈 Kedalaman Corong (4 Tahap)</button>
+          <button type="button" class="menu-item" data-page="table">📋 Log Interaksi UX & Leads</button>
         </nav>
       </div>
 
@@ -147,10 +142,10 @@
         <div class="filter-group">
           <select id="channelFilter">
             <option value="all">Semua Saluran Iklan</option>
-            <option value="Google Ads">Google Ads</option>
-            <option value="Instagram">Instagram</option>
-            <option value="Twitter/X">Twitter/X</option>
-            <option value="Website">Website Organik</option>
+            <option value="Google Ads">Google Ads (Search B2B Intent)</option>
+            <option value="Instagram">Instagram Ads (Reels / Visual 3D)</option>
+            <option value="Twitter/X">Twitter/X & Artstation</option>
+            <option value="Website">Website Organik (SEO)</option>
           </select>
 
           <select id="dateFilter">
@@ -163,15 +158,10 @@
         <div class="header-actions">
           <div class="user-persona-tag">
             <span>👤</span>
-            <span><strong>Pak Hendra</strong> &bull; <em>Head of Marketing</em></span>
+            <span><strong id="displayUserName">Lead 3D Artist</strong> &bull; <em>Studio Director</em></span>
           </div>
 
-          <a href="home.html" class="header-home-btn" title="Halaman Utama EduFlow Agency">
-            <span>🏠</span>
-            <span>Home EduFlow</span>
-          </a>
-
-          <div class="avatar" title="Profil Pak Hendra">
+          <div class="avatar" title="Profil Lead 3D Artist">
             <svg class="avatar-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M20 21a8 8 0 0 0-16 0" />
               <circle cx="12" cy="7" r="4" />

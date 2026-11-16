@@ -1,105 +1,81 @@
-# LeakTrace &bull; EduFunnel Intelligence Suite
-> **Platform Analitik Corong Penerimaan Mahasiswa Baru (PMB) & Deteksi Kebocoran Iklan (*Drop-off Leak Detection*) Berbasis Webhook & n8n Automation Engine.**
+# Dimension3D Studio &bull; Funnel Analytics & Deal Intelligence Suite
+> **Sistem Internal Monitoring Funnel Bisnis Jasa 3D Desain & Deteksi Titik Kebocoran Iklan (*Drop-off Leak Detection*) Berbasis Webhook & Browser Local Storage.**
 
-Tugas Proyek: **Desain Interaksi Pengguna (DIP)**  
-Studi Kasus: **Akademi Skill Nusantara (Klien)**  
-Target Persona: **Pak Hendra — *Head of Marketing & Admission***
+Bisnis: **Studio Jasa 3D Desain, Architectural Visualization & Commercial CGI Animation**  
+Target Pengguna: **Lead 3D Artist / Studio Director (Pemilik Studio)**  
+Teknologi: **Vanilla HTML5, Modern CSS3, JavaScript ES6+, Chart.js, Express.js Backend & Vercel Serverless**
 
 ---
 
-## 📁 Struktur Workspace Repositori (Tahap 2)
+## 📁 Struktur Workspace Repositori
 
 ```text
-LeakTrace/
-├── docs/                 # Dokumentasi DIP (User Persona, Wireframe, Alur Interaksi)
-│   ├── user-persona.md          # Profil Pak Hendra, skenario, pain points, kebutuhan DIP
+Dimension3D/
+├── docs/                 # Dokumentasi Arsitektur & Alur Interaksi
+│   ├── user-persona.md          # Profil Lead 3D Artist, skenario bisnis, & kebutuhan analitik
 │   ├── wireframe-interaction.md # Wireframe & rancangan desain interaksi frontend
 │   └── alur-integrasi-n8n.md    # Arsitektur webhook, n8n flow & real-time sync
-├── frontend/             # Codebase UI (Halaman Utama Agensi + Dashboard Klien)
-│   ├── home.html                # Halaman Utama EduFlow Agency & Kalkulator Kebocoran
-│   ├── index.html               # Sisi Klien: Dashboard Funnel Analytics Pak Hendra & Login
+├── frontend/             # Codebase UI (Halaman Utama Akses Studio & Dashboard)
+│   ├── index.html               # Gerbang Login/Register & Dashboard Funnel Analytics Studio 3D
 │   ├── css/
 │   │   └── style.css            # Desain sistem global (Light minimalist, white dominant, blue accent)
 │   ├── js/
-│   │   ├── main.js              # Core dashboard engine & leak detection logic
-│   │   └── data_funnel.js       # Dataset funnel & mock data
+│   │   ├── main.js              # Core 4-stage funnel engine, leak detection logic & localStorage auth
+│   │   └── data_funnel.js       # Dataset funnel & mock data 3D design
 │   └── data_funnel.json
-├── backend/              # Codebase API (Engine perhitungan Conversion Rate & Data Funnel)
+├── backend/              # Codebase API (Engine kalkulasi Funnel & In-memory Store)
 │   ├── package.json             # Manifest dependensi Express
-│   ├── server.js                # API GET /api/dashboard/funnel & POST /api/leads
+│   ├── server.js                # API GET /api/dashboard/funnel & POST /api/leads, auth endpoints
 │   └── README.md                # Panduan instalasi dan pengujian API backend
 ├── n8n-workflows/        # File JSON export dari workflow n8n
 │   ├── pmb-lead-automation.json # Workflow webhook, auto-reply WA, alert Telegram & anti-leak
 │   └── README.md                # Panduan import workflow ke n8n
-├── README.md             # Panduan proyek, arsitektur webhook, & cara run
+├── public/               # Direktori aset statis produksi Vercel (Sinkronisasi frontend)
+├── api/
+│   └── index.js                 # Adapter Vercel Serverless Function
+├── vercel.json           # Konfigurasi routing & rewrites anti "Cannot GET /"
+├── package.json          # Root package manifest
+├── README.md             # Panduan proyek & cara deploy
 └── .gitignore            # Pengabaian file dependensi & log
 ```
 
 ---
 
-## 👤 Tahap 1: User Persona
+## 🎯 4 Tahapan Corong (Funnel) Bisnis Jasa 3D Desain
 
-* **Nama:** Pak Hendra
-* **Role:** *Head of Marketing & Admission* di Akademi Skill Nusantara
-* **Skenario:** Mengelola kampanye berbayar **Google Ads** dan **Instagram Ads**. Membutuhkan tempat terpusat untuk memantau performa iklan dan melihat secara transparan di mana calon siswa keluar (*drop-off*).
-* **Kebutuhan DIP:** Visualisasi corong instan tanpa perlu olah file Excel manual, disertai indikator warna merah mencolok pada titik kebocoran pendaftaran tertinggi.
-* *Detail lengkap:* Lihat [`docs/user-persona.md`](docs/user-persona.md).
-
----
-
-## 🖥️ Tahap 3: Front-End Development (Focus DIP)
-
-Antarmuka terbagi menjadi dua sisi interaksi:
-
-### A. Sisi Agensi & Edukasi Klien — Home Screen & Kalkulator Kebocoran (`frontend/home.html`)
-* **Fungsi:** Halaman profil agensi EduFlow yang mendemonstrasikan transparansi analitik corong PMB dan kalkulator interaktif untuk memprediksi potensi pemborosan anggaran iklan.
-* **Elemen Interaksi Utama:**
-  1. **Hero & 4 Pilar Agensi:** Menyajikan value proposition EduFlow Agency dengan estetika *clean minimalist* (latar putih dominan dengan aksen biru `#2563eb`).
-  2. **Interactive Funnel Leak Calculator:** Kalkulator interaktif dengan input anggaran iklan, biaya per klik (CPC), jumlah leads, dan siswa terdaftar.
-  3. **Preset Cepat:** Tombol preset (Kampanye Kecil, Sedang, Agresif) untuk pengisian otomatis instan.
-  4. **Dynamic Visualizer & BOCOR PARAH Alert:** Menampilkan persentase konversi per tahap secara visual dan memicu badge **"BOCOR PARAH"** berlatar merah teks putih kontras tinggi jika *drop-off* melebihi 75%.
-  5. **Estimasi Kerugian & Rekomendasi:** Menghitung estimasi budget yang terbuang sia-sia akibat *drop-off* iklan beserta paket solusi EduFlow.
-
-### B. Sisi Klien (Pak Hendra) — Dashboard Funnel Analytics (`frontend/index.html`)
-* **Interactive Funnel Chart 4 Tahap:** Impresi Ads $\rightarrow$ Klik Link $\rightarrow$ Pengisi Form $\rightarrow$ Siswa Diterima.
-* **Indicator & Leak Alert:** Titik kebocoran tertinggi otomatis disorot dengan **aksen warna merah menyala** (`.bar-fill.leak-alert`) dan banner peringatan:  
-  `⚠️ Warning: Drop-off 85.2% terjadi dari Klik ke Form Pendaftaran!`
-* **Filter Interaktif Komparasi:** Membandingkan performa antara **Google Ads vs Instagram Ads** secara *side-by-side* untuk pengambilan keputusan cepat.
-* **Tabel Live Leads:** Menampilkan data pendaftar baru yang masuk secara *real-time*.
-* **Mode Demo 1-Klik:** Login instan sebagai Pak Hendra tanpa perlu konfigurasi Supabase manual.
+1. **1. Impresi Iklan (IG/Google Ads):** Total paparan iklan berbayar (Instagram Reels 3D portfolio & Google Ads Search B2B).
+2. **2. Pengunjung Web 3D:** Calon klien yang mengklik iklan dan mengunjungi website galeri portofolio studio.
+3. **3. Interaksi Kalkulator Harga:** Pengunjung yang mencoba kalkulator estimasi biaya jasa 3D (memilih jenis render, resolusi, durasi animasi).
+4. **4. Request Brief / Deal Proyek:** Calon klien yang mengirimkan formulir brief proyek, mengunggah referensi, dan menyepakati uang muka (DP 50%).
 
 ---
 
-## ⚙️ Tahap 4: Back-End API & Integrasi n8n
+## 🚨 Fitur Unggulan Sistem
 
-### 1. Peran Back-End API (`backend/server.js`)
-* **`GET /api/dashboard/funnel`:** Mengkalkulasi angka impresi, klik, dan conversion rate, serta mengidentifikasi *critical leak stage*.
-* **`POST /api/leads`:** Menerima data pendaftaran dan meneruskannya ke n8n webhook.
-* **`GET /api/leads`:** Mengambil daftar pendaftar terbaru.
+### 1. Deteksi Titik Kebocoran Otomatis (BOCOR PARAH Alert)
+* Setiap transisi antar-tahap dihitung persentase penurunannya (*drop-off rate*).
+* Jika *drop-off* melebihi 70% atau merupakan yang tertinggi, sistem otomatis menyalakan badge merah menyala **`🚨 BOCOR PARAH TERDETEKSI`** beserta rekomendasi taktis khusus bisnis 3D (misal: penambahan tombol konsultasi WhatsApp instan di hasil kalkulator harga).
 
-### 2. Alur Automasi n8n (`n8n-workflows/pmb-lead-automation.json`)
-```text
-[Formulir PMB / Leads] ──(Webhook Event)──> [n8n Workflow Engine] ───┬──> [WA/Email Calon Siswa (Brosur)]
-                                                                      ├──> [Notifikasi Telegram Pak Hendra]
-                                                                      ├──> [Database / Google Sheets Sync]
-                                                                      └──> [Wait 24 Jam -> Anti-Leak Reminder]
-```
-1. **Trigger Webhook:** Menerima event saat calon siswa submit formulir PMB.
-2. **Instant Auto-Response (Nurturing):** Mengirim WhatsApp otomatis berisi tautan brosur digital dan salam hangat kampus.
-3. **Internal Alert ke Pak Hendra:** Notifikasi Telegram kilat dengan data nama, no WA, dan channel iklan sumber.
-4. **Data Syncing:** Memperbarui data pendaftar sehingga grafik dashboard bertambah secara *live*.
-5. **Anti-Leak Automation (Wait 24 Jam):** Jika calon siswa belum menyelesaikan pembayaran registrasi setelah 24 jam, n8n otomatis mengirim pesan pengingat kuota beasiswa.
+### 2. Komparasi Head-to-Head Iklan
+* **Google Ads (High Intent B2B Search):** Menganalisis klien korporat dengan kebutuhan mendesak (konversi tinggi).
+* **Instagram Ads (Reels 3D Portfolio):** Menganalisis audiens visual yang tinggi di impresi namun rawan keluar sebelum menghitung harga.
+
+### 3. Log Interaksi UX & Leads Masuk (Kalkulator 3D)
+* Tabel pencatatan riwayat calon klien yang melakukan simulasi harga di website (Jenis layanan 3D: ArchViz, Product Animation, Game Asset, Packaging; spesifikasi render; estimasi harga; dan status deal).
+* Dilengkapi tombol modal **"➕ Tambah Simulasi Lead Baru"** untuk pengujian langsung (*live demo test*) yang langsung tersimpan di browser `localStorage`.
+
+### 4. 100% Anti Error di Vercel (Anti `Failed to fetch` & Anti `Cannot GET /`)
+* **Local Storage First:** Sistem autentikasi (Register, Login, Mode Demo) dan pencatatan leads didukung `localStorage` browser sebagai penyimpanan lokal utama sehingga bebas error jaringan.
+* **Vercel Routing:** File `vercel.json` mengarahkan rute root `/` langsung ke `index.html` dan `/api/*` ke Express Serverless Function.
 
 ---
 
 ## 🚀 Cara Menjalankan Project
 
-### 1. Menjalankan Frontend (UI Dashboard & Home Screen)
+### 1. Menjalankan Frontend (Lokal)
 * Buka folder project di VS Code.
-* Jalankan extension **Live Server**:
-  * Buka `frontend/home.html` untuk melihat Home Screen EduFlow Agency & Kalkulator Kebocoran.
-  * Buka `frontend/index.html` untuk melihat Auth & Dashboard Klien (Pak Hendra).
-* *Tips Demo:* Pada halaman login dashboard (`index.html`), klik tombol **"⚡ Mode Demo: Masuk Sebagai Pak Hendra"** untuk masuk instan dengan 1 klik.
+* Jalankan extension **Live Server** pada file `frontend/index.html`.
+* Klik tombol **"⚡ Mode Demo: Masuk Sebagai Lead 3D Artist"** untuk langsung masuk ke dashboard dalam 1 klik.
 
 ### 2. Menjalankan Backend API (Lokal)
 ```bash
@@ -108,22 +84,11 @@ npm start
 ```
 Server akan aktif di `http://localhost:3001` (melayani API corong dan file statis).
 
-### 3. Mengimpor Workflow ke n8n
-* Buka instance n8n (`http://localhost:5678` atau n8n Cloud).
-* Klik menu **Workflows > Import from File**.
-* Pilih file `n8n-workflows/pmb-lead-automation.json`.
-* Aktifkan workflow.
-
-### 4. Deploy ke Vercel (Production)
-Proyek ini sudah dilengkapi konfigurasi serverless [`vercel.json`](vercel.json), folder [`api/`](api/index.js), dan aset statis [`public/`](public/):
-* **Root `/`:** Otomatis menampilkan Home Screen EduFlow Agency & Kalkulator Kebocoran (`home.html`).
-* **Dashboard `/index.html` (atau `/dashboard`):** Menampilkan Dashboard Analitik Pak Hendra.
-* **Backend `/api/*`:** Otomatis dialihkan ke Express Serverless Function (`/api/dashboard/funnel` & `/api/leads`).
-
----
-
-## 📊 Tips Tambahan: GitHub Projects (Kanban Board)
-Untuk bukti pengerjaan terstruktur kepada dosen, Anda dapat membuat **GitHub Projects (Kanban Board)** dengan 3 kolom:
-* **To Do:** "Desain Wireframe Mobile Landing Page", "Konfigurasi SSL Webhook n8n".
-* **In Progress:** "Implementasi Visualisasi Funnel 4 Tahap", "Pengujian Respon Pesan WhatsApp".
-* **Done:** "User Persona Pak Hendra", "Setup Struktur Repositori", "Deteksi Titik Kebocoran Otomatis (Merah)", "Formulir Pendaftaran & Floating CTA".
+### 3. Deploy ke Vercel (Production)
+Tinggal commit dan push ke GitHub repository:
+```bash
+git add .
+git commit -m "feat: transform funnel analytics to 3D design studio business"
+git push
+```
+Vercel akan otomatis melakukan build dan menyajikan dashboard pada domain Vercel Anda secara instan.

@@ -12,11 +12,15 @@
     },
     {
       "source": "/",
-      "destination": "/home.html"
+      "destination": "/index.html"
     },
     {
-      "source": "/home",
-      "destination": "/home.html"
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/register",
+      "destination": "/index.html"
     },
     {
       "source": "/dashboard",
