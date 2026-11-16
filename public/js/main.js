@@ -463,7 +463,7 @@ function renderOverview() {
       <div class="leak-icon">⚠️</div>
       <div class="leak-content">
         <h4><span class="bocor-parah-badge">🚨 BOCOR PARAH TERDETEKSI!</span> Drop-off Klien Tertinggi</h4>
-        <p>Terjadi penurunan ekstrem sebesar <strong style="color:#b91c1c; font-weight:800;">${highestDrop.percent.toFixed(1)}% drop-off</strong> pada transisi <strong>"${highestDrop.label}"</strong> (Kehilangan ${highestDrop.value.toLocaleString("id-ID")} calon klien potensial).</p>
+        <p>Terjadi penurunan ekstrem sebesar <strong style="color:#f87171; font-weight:800; text-shadow:0 0 10px rgba(239,68,68,0.4);">${highestDrop.percent.toFixed(1)}% drop-off</strong> pada transisi <strong>"${highestDrop.label}"</strong> (Kehilangan ${highestDrop.value.toLocaleString("id-ID")} calon klien potensial).</p>
         <div class="leak-rec">💡 <strong>Rekomendasi Taktis Lead 3D Artist:</strong> ${
           highestDrop.label.includes("Kalkulator")
             ? "Calon klien menghitung estimasi biaya di kalkulator namun batal submit brief. Pasang tombol 'Konsultasi WhatsApp Instan dengan 3D Artist' langsung di hasil simulasi harga dan tawarkan potongan 10% untuk project pertama."
@@ -521,7 +521,7 @@ function renderLeakAnalytics() {
       <div class="leak-icon">🚨</div>
       <div class="leak-content">
         <h4><span class="bocor-parah-badge">🚨 BOCOR PARAH TERDETEKSI!</span> Penurunan Ekstrem Calon Klien 3D</h4>
-        <p>Terjadi kebocoran drastis sebesar <strong style="color:#b91c1c; font-weight:800;">${highestDrop.percent.toFixed(1)}% drop-off</strong> pada transisi <strong>"${highestDrop.label}"</strong> (Kehilangan ${highestDrop.value.toLocaleString("id-ID")} potensi brief proyek).</p>
+        <p>Terjadi kebocoran drastis sebesar <strong style="color:#f87171; font-weight:800; text-shadow:0 0 10px rgba(239,68,68,0.4);">${highestDrop.percent.toFixed(1)}% drop-off</strong> pada transisi <strong>"${highestDrop.label}"</strong> (Kehilangan ${highestDrop.value.toLocaleString("id-ID")} potensi brief proyek).</p>
         <div class="leak-rec">🎯 <strong>Rekomendasi Optimalisasi Studio:</strong> Terapkan <em>instant WhatsApp consultation</em> dan sediakan opsi upload file referensi (.obj, .fbx, sketsa CAD, foto produk) langsung pada form kalkulator untuk memangkas friksi komunikasi klien.</div>
       </div>
     </div>
@@ -565,7 +565,7 @@ function renderLeakAnalytics() {
         <p><strong>Est. Biaya per Deal (CPA):</strong> Rp 185.000 / Proyek</p>
         <p style="margin-top:6px;"><strong>Avg. Nilai Proyek 3D:</strong> Rp 8.500.000 / Proyek</p>
         <hr style="border: none; border-top: 1px solid var(--border); margin: 16px 0;" />
-        <p style="color: #10b981; font-weight:700;">✅ ROI Iklan: 4.5x Lipat</p>
+        <p style="color: #34d399; font-weight:700;">✅ ROI Iklan: 4.5x Lipat</p>
       </aside>
     </section>
 
@@ -579,7 +579,7 @@ function renderLeakAnalytics() {
         <div class="ads-card">
           <div class="ads-card-header">
             <span class="ads-tag tag-google">🔍 Google Search Ads (B2B Intent)</span>
-            <span style="font-size: 0.85rem; color: #10b981; font-weight: 700;">Konversi Tinggi</span>
+            <span style="font-size: 0.85rem; color: #34d399; font-weight: 700;">Konversi Tinggi</span>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
             <div>
@@ -596,10 +596,10 @@ function renderLeakAnalytics() {
             </div>
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">Deal Proyek 3D</div>
-              <strong style="font-size: 1.1rem; color: var(--primary);">275 (13.5% Deal)</strong>
+              <strong style="font-size: 1.1rem; color: var(--accent-cyan); font-weight: 800;">275 (13.5% Deal)</strong>
             </div>
           </div>
-          <p style="font-size: 0.85rem; color: #475569; border-top: 1px solid var(--border); padding-top: 12px; line-height: 1.5;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; line-height: 1.5;">
             Target keyword "jasa 3d rendering", "animasi produk 3d", dan "3d modeling B2B" menghasilkan klien serius dengan konversi deal tinggi.
           </p>
         </div>
@@ -608,7 +608,7 @@ function renderLeakAnalytics() {
         <div class="ads-card">
           <div class="ads-card-header">
             <span class="ads-tag tag-ig">📸 Instagram Ads (Reels 3D Portfolio)</span>
-            <span style="font-size: 0.85rem; color: #ef4444; font-weight: 700;">⚠️ Titik Kebocoran Tinggi</span>
+            <span style="font-size: 0.85rem; color: #f87171; font-weight: 700;">⚠️ Titik Kebocoran Tinggi</span>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
             <div>
@@ -621,14 +621,14 @@ function renderLeakAnalytics() {
             </div>
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">Coba Kalkulator</div>
-              <strong style="font-size: 1.1rem; color: #dc2626;">1.620 (Drop 83.5%)</strong>
+              <strong style="font-size: 1.1rem; color: #f87171;">1.620 (Drop 83.5%)</strong>
             </div>
             <div>
               <div style="font-size: 0.75rem; color: var(--text-muted);">Deal Proyek 3D</div>
-              <strong style="font-size: 1.1rem; color: var(--primary);">145 (8.95% Deal)</strong>
+              <strong style="font-size: 1.1rem; color: var(--accent-cyan); font-weight: 800;">145 (8.95% Deal)</strong>
             </div>
           </div>
-          <p style="font-size: 0.85rem; color: #475569; border-top: 1px solid var(--border); padding-top: 12px; line-height: 1.5;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; line-height: 1.5;">
             Audiens Instagram terpukau dengan visual 3D render tetapi mayoritas hanya scrolling santai. <strong>Disarankan pasang pop-up 'Download Price Guide PDF' untuk menangkap email mereka.</strong>
           </p>
         </div>
@@ -660,12 +660,12 @@ function renderLeakAnalytics() {
             ${leads.map(lead => `
               <tr>
                 <td><strong>${lead.lead_id}</strong></td>
-                <td>${lead.full_name}</td>
+                <td><strong>${lead.full_name}</strong></td>
                 <td>${lead.service_type}</td>
                 <td><small style="color:var(--text-muted);">${lead.specifications}</small></td>
-                <td><strong style="color:var(--primary);">${lead.estimated_price}</strong></td>
+                <td><strong style="color:var(--accent-cyan);">${lead.estimated_price}</strong></td>
                 <td><span class="ads-tag ${lead.utm_source.includes('Google') ? 'tag-google' : 'tag-ig'}">${lead.utm_source.split(' ')[0]} Ads</span></td>
-                <td><span style="color:#10b981; font-weight:700;">⚡ ${lead.status}</span></td>
+                <td><span style="color:#34d399; font-weight:700;">⚡ ${lead.status}</span></td>
               </tr>
             `).join("")}
           </tbody>
@@ -747,37 +747,48 @@ function renderChannelChart() {
         {
           label: "Pengunjung Web 3D",
           data: sources.map(s => s.pengunjung),
-          backgroundColor: "rgba(37, 99, 235, 0.2)",
-          borderColor: "#2563eb",
+          backgroundColor: "rgba(99, 102, 241, 0.35)",
+          borderColor: "#6366f1",
           borderWidth: 2,
-          borderRadius: 6
+          borderRadius: 8
         },
         {
           label: "Coba Kalkulator Harga",
           data: sources.map(s => s.kalkulator),
-          backgroundColor: "rgba(99, 102, 241, 0.3)",
-          borderColor: "#6366f1",
+          backgroundColor: "rgba(6, 182, 212, 0.35)",
+          borderColor: "#06b6d4",
           borderWidth: 2,
-          borderRadius: 6
+          borderRadius: 8
         },
         {
           label: "Deal Proyek Resmi",
           data: sources.map(s => s.deal),
-          backgroundColor: "rgba(16, 185, 129, 0.7)",
+          backgroundColor: "rgba(16, 185, 129, 0.65)",
           borderColor: "#10b981",
           borderWidth: 2,
-          borderRadius: 6
+          borderRadius: 8
         }
       ]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: { labels: { color: "#475569" } }
+        legend: {
+          labels: {
+            color: "#cbd5e1",
+            font: { family: "Plus Jakarta Sans", weight: 600 }
+          }
+        }
       },
       scales: {
-        x: { ticks: { color: "#64748b" }, grid: { color: "rgba(0,0,0,0.05)" } },
-        y: { ticks: { color: "#64748b" }, grid: { color: "rgba(0,0,0,0.05)" } }
+        x: {
+          ticks: { color: "#94a3b8", font: { family: "Plus Jakarta Sans" } },
+          grid: { color: "rgba(255, 255, 255, 0.06)" }
+        },
+        y: {
+          ticks: { color: "#94a3b8", font: { family: "Plus Jakarta Sans" } },
+          grid: { color: "rgba(255, 255, 255, 0.06)" }
+        }
       }
     }
   });
@@ -914,20 +925,20 @@ function openNewLeadModal() {
   if (existingModal) existingModal.remove();
 
   const modalHtml = `
-    <div id="leadModal" style="position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px); padding: 16px;">
-      <div style="background: #ffffff; border-radius: 14px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid var(--border); overflow: hidden;">
-        <div style="padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700;">➕ Input Simulasi Brief Klien 3D Baru</h3>
-          <button type="button" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);" onclick="closeLeadModal()">✕</button>
+    <div id="leadModal" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); padding: 16px;">
+      <div style="background: #18181b; border-radius: 16px; width: 100%; max-width: 520px; box-shadow: 0 25px 60px rgba(0,0,0,0.85), 0 0 30px rgba(99,102,241,0.15); border: 1px solid rgba(255,255,255,0.12); overflow: hidden; color: #f8fafc;">
+        <div style="padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #f8fafc;">➕ Input Simulasi Brief Klien 3D Baru</h3>
+          <button type="button" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted); transition: color 0.15s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-muted)'" onclick="closeLeadModal()">✕</button>
         </div>
         <form id="newLeadForm" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
           <div>
-            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Nama Klien / Brand</label>
-            <input type="text" id="mClientName" placeholder="Contoh: PT Kreasi Interior Indonesia" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;" />
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px; color: #cbd5e1;">Nama Klien / Brand</label>
+            <input type="text" id="mClientName" placeholder="Contoh: PT Kreasi Interior Indonesia" required style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #101014; color: #f8fafc; font-family: inherit; font-size: 14px; outline: none;" />
           </div>
           <div>
-            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Layanan 3D</label>
-            <select id="mServiceType" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;">
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px; color: #cbd5e1;">Layanan 3D</label>
+            <select id="mServiceType" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #101014; color: #f8fafc; font-family: inherit; font-size: 14px; outline: none;">
               <option value="3D Architectural Visualization">3D Architectural Visualization (ArchViz)</option>
               <option value="3D Product Commercial & Animation">3D Product Commercial & Animation</option>
               <option value="3D Game Asset & Character Rigging">3D Game Asset & Character Rigging</option>
@@ -936,17 +947,17 @@ function openNewLeadModal() {
             </select>
           </div>
           <div>
-            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Spesifikasi Proyek</label>
-            <input type="text" id="mSpecs" placeholder="Contoh: 4K Render, 3 Angles, Lighting Mood Twilight" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;" />
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px; color: #cbd5e1;">Spesifikasi Proyek</label>
+            <input type="text" id="mSpecs" placeholder="Contoh: 4K Render, 3 Angles, Lighting Mood Twilight" required style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #101014; color: #f8fafc; font-family: inherit; font-size: 14px; outline: none;" />
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
-              <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Estimasi Harga</label>
-              <input type="text" id="mPrice" placeholder="Rp 7.500.000" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;" />
+              <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px; color: #cbd5e1;">Estimasi Harga</label>
+              <input type="text" id="mPrice" placeholder="Rp 7.500.000" required style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #101014; color: #f8fafc; font-family: inherit; font-size: 14px; outline: none;" />
             </div>
             <div>
-              <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Sumber Iklan</label>
-              <select id="mSource" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;">
+              <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px; color: #cbd5e1;">Sumber Iklan</label>
+              <select id="mSource" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #101014; color: #f8fafc; font-family: inherit; font-size: 14px; outline: none;">
                 <option value="Google Ads">Google Ads</option>
                 <option value="Instagram Ads">Instagram Ads</option>
                 <option value="Twitter/X">Twitter/X</option>
@@ -955,8 +966,8 @@ function openNewLeadModal() {
             </div>
           </div>
           <div>
-            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px;">Status Deal</label>
-            <select id="mStatus" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 14px;">
+            <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 6px; color: #cbd5e1;">Status Deal</label>
+            <select id="mStatus" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #101014; color: #f8fafc; font-family: inherit; font-size: 14px; outline: none;">
               <option value="Request Brief Submitted">Request Brief Submitted</option>
               <option value="Deal Project (DP 50% Received)">Deal Project (DP 50% Received)</option>
               <option value="Follow-up Konsultasi WA">Follow-up Konsultasi WA</option>
@@ -964,8 +975,8 @@ function openNewLeadModal() {
             </select>
           </div>
           <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-            <button type="button" onclick="closeLeadModal()" style="padding: 10px 18px; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; cursor: pointer; font-weight: 600;">Batal</button>
-            <button type="submit" class="auth-button" style="width: auto; padding: 10px 20px; margin: 0; font-size: 14px;">Simpan Simulasi</button>
+            <button type="button" onclick="closeLeadModal()" style="padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #27272a; color: #cbd5e1; cursor: pointer; font-weight: 600; transition: all 0.15s;">Batal</button>
+            <button type="submit" class="auth-button" style="width: auto; padding: 10px 22px; margin: 0; font-size: 14px;">Simpan Simulasi</button>
           </div>
         </form>
       </div>
@@ -1080,10 +1091,10 @@ function getReportExportMarkup() {
       <button type="button" class="export-btn" id="exportBtn" style="width: 100%; justify-content: center;">
         📥 Export Studio Report &darr;
       </button>
-      <div class="export-menu" id="exportMenu" hidden style="background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); margin-top:6px; overflow:hidden;">
-        <button type="button" class="export-item" data-export-type="pdf" style="display:block; width:100%; padding:10px 14px; text-align:left; background:none; border:none; cursor:pointer;">📄 Unduh PDF Report</button>
-        <button type="button" class="export-item" data-export-type="csv" style="display:block; width:100%; padding:10px 14px; text-align:left; background:none; border:none; cursor:pointer;">📊 Unduh Spreadsheet (CSV)</button>
-        <button type="button" class="export-item" data-export-type="json" style="display:block; width:100%; padding:10px 14px; text-align:left; background:none; border:none; cursor:pointer;">💾 Unduh Raw Data (JSON)</button>
+      <div class="export-menu" id="exportMenu" hidden>
+        <button type="button" class="export-item" data-export-type="pdf">📄 Unduh PDF Report</button>
+        <button type="button" class="export-item" data-export-type="csv">📊 Unduh Spreadsheet (CSV)</button>
+        <button type="button" class="export-item" data-export-type="json">💾 Unduh Raw Data (JSON)</button>
       </div>
     </div>
   `;
